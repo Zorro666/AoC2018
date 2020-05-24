@@ -16,5 +16,17 @@ namespace Day03
             Program.Parse(input);
             Assert.That(Program.OverClaimed(), Is.EqualTo(expected));
         }
+
+        [Test]
+        [TestCase(new string[] {
+"#1 @ 1,3: 4x4",
+"#2 @ 3,1: 4x4",
+"#3 @ 5,5: 2x2"
+        }, 3, TestName = "SingleClaimID 3")]
+        public void SingleClaimID(string[] input, int expected)
+        {
+            Program.Parse(input);
+            Assert.That(Program.SingleClaimID(), Is.EqualTo(expected));
+        }
     }
 }
