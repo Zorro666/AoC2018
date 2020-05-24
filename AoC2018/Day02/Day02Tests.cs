@@ -6,10 +6,34 @@ namespace Day02
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day02(string directions, int expected)
+        [TestCase(new string[] {
+"abcdef",
+"bababc",
+"abbcde",
+"abcccd",
+"aabcdd",
+"abcdee",
+"ababab"
+        }, 12, TestName = "Checksum 12")]
+        public void Checksum(string[] input, int expected)
         {
-            Assert.Fail();
+            Program.Parse(input);
+            Assert.That(Program.Checksum(), Is.EqualTo(expected));
+        }
+
+        [TestCase(new string[] {
+"abcde",
+"fghij",
+"klmno",
+"pqrst",
+"fguij",
+"axcye",
+"wvxyz"
+        }, "fgij", TestName = "CommonChars")]
+        public void CommonChars(string[] input, string expected)
+        {
+            Program.Parse(input);
+            Assert.That(Program.CommonChars(), Is.EqualTo(expected));
         }
     }
 }
