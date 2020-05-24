@@ -11,11 +11,13 @@ namespace Day06
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            Parse(lines);
+
             if (part1)
             {
-                long result1 = -666;
+                var result1 = LargestFiniteArea();
                 Console.WriteLine($"Day06 : Result1 {result1}");
-                long expected = 280;
+                var expected = 280;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -31,6 +33,15 @@ namespace Day06
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
                 }
             }
+        }
+
+        public static void Parse(string[] lines)
+        {
+        }
+
+        public static int LargestFiniteArea()
+        {
+            return int.MinValue;
         }
 
         public static void Run()
