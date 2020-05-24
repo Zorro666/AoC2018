@@ -6,10 +6,15 @@ namespace Day03
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day03(string directions, int expected)
+        [TestCase(new string[] {
+"#1 @ 1,3: 4x4",
+"#2 @ 3,1: 4x4",
+"#3 @ 5,5: 2x2"
+        }, 4, TestName = "OverClaimed 4")]
+        public void OverClaimed(string[] input, int expected)
         {
-            Assert.Fail();
+            Program.Parse(input);
+            Assert.That(Program.OverClaimed(), Is.EqualTo(expected));
         }
     }
 }
