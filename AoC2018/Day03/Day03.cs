@@ -56,6 +56,9 @@ namespace Day03
 {
     class Program
     {
+        const int MAX_GRID_SIZE = 1024;
+        readonly static byte[,] sUsedCount = new byte[MAX_GRID_SIZE, MAX_GRID_SIZE];
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
@@ -65,7 +68,7 @@ namespace Day03
             {
                 var result1 = OverClaimed();
                 Console.WriteLine($"Day03 : Result1 {result1}");
-                var expected = 280;
+                var expected = 115242;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -85,11 +88,63 @@ namespace Day03
 
         public static void Parse(string[] lines)
         {
+            for (var y = 0; y < MAX_GRID_SIZE; ++y)
+            {
+                for (var x = 0; x < MAX_GRID_SIZE; ++x)
+                {
+                    sUsedCount[x, y] = 0;
+                }
+            }
+
+            foreach (var line in lines)
+            {
+                var tokensAt = line.Trim().Split('@');
+                var tokensColon = tokensAt[1].Trim().Split(':');
+                var originToken = tokensColon[0];
+                var dimensionsToken = tokensColon[1];
+
+                var x0y0Tokens = originToken.Trim().Split(',');
+                var x0Token = x0y0Tokens[0].Trim();
+                var y0Token = x0y0Tokens[1].Trim();
+
+                var x0 = int.Parse(x0Token);
+                var y0 = int.Parse(y0Token);
+
+                var widthHeightTokens = dimensionsToken.Trim().Split('x');
+                var widthToken = widthHeightTokens[0].Trim();
+                var heightToken = widthHeightTokens[1].Trim();
+                var width = int.Parse(widthToken);
+                var height = int.Parse(heightToken);
+
+                for (var y = y0; y < y0 + height; ++y)
+                {
+                    for (var x = x0; x < x0 + width; ++x)
+                    {
+                        var count = sUsedCount[x, y];
+                        if (count < 100)
+                        {
+                            ++count;
+                        }
+                        sUsedCount[x, y] = count;
+                    }
+                }
+            }
         }
 
         public static long OverClaimed()
         {
-            return long.MinValue;
+            var count = 0L;
+            for (var y = 0; y < MAX_GRID_SIZE; ++y)
+            {
+                for (var x = 0; x < MAX_GRID_SIZE; ++x)
+                {
+                    if (sUsedCount[x, y] >= 2)
+                    {
+                        ++count;
+                    }
+                }
+            }
+            return count;
         }
 
         public static void Run()
