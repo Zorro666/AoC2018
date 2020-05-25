@@ -82,7 +82,7 @@ Using the same coordinates as above, the resulting region looks like this:
 ..........
 ..........
 ........F.
-
+x
 In particular, consider the highlighted location 4,3 located at the top middle of the region.
 Its calculation is as follows, where abs() is the absolute value function:
 
@@ -135,9 +135,9 @@ namespace Day06
             }
             else
             {
-                long result2 = -123;
+                var result2 = AreaWithin(10000);
                 Console.WriteLine($"Day06 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 44634;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -325,6 +325,48 @@ namespace Day06
                 maxFiniteCount = Math.Max(maxFiniteCount, finiteCount);
             }
             return maxFiniteCount;
+        }
+
+        public static int AreaWithin(int maxTotalDistance)
+        {
+            for (var y = 0; y < MAX_GRID_SIZE; ++y)
+            {
+                for (var x = 0; x < MAX_GRID_SIZE; ++x)
+                {
+                    sClosestDistance[x, y] = int.MaxValue;
+                    sClosestPoints[x, y] = int.MaxValue;
+                }
+            }
+
+            var areaWithin = 0;
+            for (var y = 0; y < MAX_GRID_SIZE; ++y)
+            {
+                for (var x = 0; x < MAX_GRID_SIZE; ++x)
+                {
+                    var totalDistance = 0;
+                    for (var l = 0; l < sLocationCount; ++l)
+                    {
+                        var x0 = sX0s[l];
+                        var y0 = sY0s[l];
+                        var distance = Math.Abs(x - x0) + Math.Abs(y - y0);
+                        totalDistance += distance;
+                        if (totalDistance >= maxTotalDistance)
+                        {
+                            break;
+                        }
+                    }
+                    if (totalDistance < maxTotalDistance)
+                    {
+                        sClosestDistance[x, y] = 1;
+                        ++areaWithin;
+                    }
+                    else
+                    {
+                        sClosestDistance[x, y] = 0;
+                    }
+                }
+            }
+            return areaWithin;
         }
 
         public static void Run()
