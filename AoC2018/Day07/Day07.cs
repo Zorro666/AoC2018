@@ -55,6 +55,12 @@ namespace Day07
 {
     class Program
     {
+        const int MAX_NUM_NODES = 128;
+        readonly static bool[,] sParents = new bool[MAX_NUM_NODES, MAX_NUM_NODES];
+        readonly static bool[,] sChildren = new bool[MAX_NUM_NODES, MAX_NUM_NODES];
+        readonly static bool[] sActiveNodes = new bool[MAX_NUM_NODES];
+        readonly static bool[] sCompletedNodes = new bool[MAX_NUM_NODES];
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
@@ -84,11 +90,92 @@ namespace Day07
 
         public static void Parse(string[] lines)
         {
+            foreach (var line in lines)
+            {
+                var tokens = line.Trim().Split();
+                bool validLine = false;
+                // "Step C must be finished before step A can begin.",
+                if (tokens.Length == 10)
+                {
+                    if ((tokens[0] == "Step") && (tokens[2] == "must") && (tokens[3] == "be") &&
+                        (tokens[4] == "finished") && (tokens[5] == "before") && (tokens[6] == "step") &&
+                        (tokens[8] == "can") && (tokens[9] == "begin."))
+                    {
+                        var parent = tokens[1].Trim();
+                        var child = tokens[7].Trim();
+                        if ((child.Length == 1) && (parent.Length == 1))
+                        {
+                            int childIndex = child[0];
+                            int parentIndex = parent[0];
+                            if ((childIndex >= 'A') && (childIndex <= 'Z') &&
+                                (parentIndex >= 'A') && (parentIndex <= 'Z'))
+                            {
+                                validLine = true;
+                                if (sParents[childIndex, parentIndex])
+                                {
+                                    throw new InvalidProgramException($"Invalid line '{line}' Node {childIndex} '{child[0]}' already has this parent {parentIndex} '{parent[0]}'");
+                                }
+                                if (sChildren[parentIndex, childIndex])
+                                {
+                                    throw new InvalidProgramException($"Invalid line '{line}' Parent {parentIndex} '{parent[0]}' already has this child {childIndex} '{child[0]}'");
+                                }
+                                sActiveNodes[childIndex] = true;
+                                sActiveNodes[parentIndex] = true;
+                                sParents[childIndex, parentIndex] = true;
+                                sChildren[parentIndex, childIndex] = true;
+                            }
+                        }
+                    }
+                }
+                if (!validLine)
+                {
+                    throw new InvalidProgramException($"Bad line '{line}' Expected 'Step [A-Z] must be finished before step [A-Z] can begin.");
+                }
+            }
         }
 
         public static string ConstructionOrder()
         {
-            return null;
+            for (var i = 0; i < MAX_NUM_NODES; ++i)
+            {
+                sCompletedNodes[i] = false;
+            }
+
+            string order = "";
+            bool doMore;
+            do
+            {
+                doMore = false;
+                for (var i = 0; i < MAX_NUM_NODES; ++i)
+                {
+                    if (!sActiveNodes[i])
+                    {
+                        continue;
+                    }
+                    if (sCompletedNodes[i])
+                    {
+                        continue;
+                    }
+                    bool parentsAllCompleted = true;
+                    for (var j = 0; j < MAX_NUM_NODES; ++j)
+                    {
+                        if (sParents[i, j] && !sCompletedNodes[j])
+                        {
+                            parentsAllCompleted = false;
+                            break;
+                        }
+                    }
+                    if (parentsAllCompleted)
+                    {
+                        doMore = true;
+                        order += (char)i;
+                        sCompletedNodes[i] = true;
+                        break;
+                    }
+                }
+            }
+            while (doMore);
+            return order;
         }
 
         public static void Run()
