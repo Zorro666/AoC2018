@@ -6,10 +6,11 @@ namespace Day08
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day08(string directions, int expected)
+        [TestCase("2 3 0 3 10 11 12 1 1 0 1 99 2 1 1 2", 138, TestName = "Sum 138")]
+        public void Sum(string nodes, int expected)
         {
-            Assert.Fail();
+            Program.Parse(new string[] { nodes });
+            Assert.That(Program.Sum(), Is.EqualTo(expected));
         }
     }
 }
