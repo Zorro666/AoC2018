@@ -98,11 +98,12 @@ namespace Day07
 {
     class Program
     {
+        const int MAX_SECONDS = 1024;
         const int MAX_NUM_NODES = 128;
         readonly static bool[,] sParents = new bool[MAX_NUM_NODES, MAX_NUM_NODES];
-        readonly static bool[,] sChildren = new bool[MAX_NUM_NODES, MAX_NUM_NODES];
         readonly static bool[] sActiveNodes = new bool[MAX_NUM_NODES];
-        readonly static bool[] sCompletedNodes = new bool[MAX_NUM_NODES];
+        readonly static int[] sTimeUntilComplete = new int[MAX_NUM_NODES];
+        static int sCountActiveNodes;
 
         private Program(string inputFile, bool part1)
         {
@@ -121,9 +122,9 @@ namespace Day07
             }
             else
             {
-                var result2 = -123;
+                var result2 = ParallelTime(60, 5);
                 Console.WriteLine($"Day07 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 880;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -138,10 +139,9 @@ namespace Day07
                 for (var j = 0; j < MAX_NUM_NODES; ++j)
                 {
                     sParents[i, j] = false;
-                    sChildren[i, j] = false;
                 }
                 sActiveNodes[i] = false;
-                sCompletedNodes[i] = false;
+                sTimeUntilComplete[i] = -1;
             }
             foreach (var line in lines)
             {
@@ -168,14 +168,9 @@ namespace Day07
                                 {
                                     throw new InvalidProgramException($"Invalid line '{line}' Node {childIndex} '{child[0]}' already has this parent {parentIndex} '{parent[0]}'");
                                 }
-                                if (sChildren[parentIndex, childIndex])
-                                {
-                                    throw new InvalidProgramException($"Invalid line '{line}' Parent {parentIndex} '{parent[0]}' already has this child {childIndex} '{child[0]}'");
-                                }
                                 sActiveNodes[childIndex] = true;
                                 sActiveNodes[parentIndex] = true;
                                 sParents[childIndex, parentIndex] = true;
-                                sChildren[parentIndex, childIndex] = true;
                             }
                         }
                     }
@@ -187,48 +182,135 @@ namespace Day07
             }
         }
 
-        public static string ConstructionOrder()
+        static int FindNextNodeToComplete()
         {
             for (var i = 0; i < MAX_NUM_NODES; ++i)
             {
-                sCompletedNodes[i] = false;
-            }
-
-            string order = "";
-            bool doMore;
-            do
-            {
-                doMore = false;
-                for (var i = 0; i < MAX_NUM_NODES; ++i)
+                if (!sActiveNodes[i])
                 {
-                    if (!sActiveNodes[i])
+                    continue;
+                }
+                if (sTimeUntilComplete[i] == 0)
+                {
+                    continue;
+                }
+                if (sTimeUntilComplete[i] > 0)
+                {
+                    continue;
+                }
+                bool parentsAllCompleted = true;
+                for (var j = 0; j < MAX_NUM_NODES; ++j)
+                {
+                    if (!sActiveNodes[j])
                     {
                         continue;
                     }
-                    if (sCompletedNodes[i])
+                    if (sTimeUntilComplete[j] == 0)
                     {
                         continue;
                     }
-                    bool parentsAllCompleted = true;
-                    for (var j = 0; j < MAX_NUM_NODES; ++j)
+                    if (sParents[i, j])
                     {
-                        if (sParents[i, j] && !sCompletedNodes[j])
-                        {
-                            parentsAllCompleted = false;
-                            break;
-                        }
-                    }
-                    if (parentsAllCompleted)
-                    {
-                        doMore = true;
-                        order += (char)i;
-                        sCompletedNodes[i] = true;
+                        parentsAllCompleted = false;
                         break;
                     }
                 }
+                if (parentsAllCompleted)
+                {
+                    return i;
+                }
             }
-            while (doMore);
+            return -1;
+        }
+
+        public static string ConstructionOrder()
+        {
+            sCountActiveNodes = 0;
+            for (var i = 0; i < MAX_NUM_NODES; ++i)
+            {
+                sTimeUntilComplete[i] = -1;
+                if (sActiveNodes[i])
+                {
+                    ++sCountActiveNodes;
+                }
+            }
+
+            var countIncompleteNodes = sCountActiveNodes;
+            string order = "";
+            do
+            {
+                int nextNode = FindNextNodeToComplete();
+                if (nextNode == -1)
+                {
+                    throw new InvalidProgramException($"Failed to find a node to complete");
+                }
+                order += (char)nextNode;
+                sTimeUntilComplete[nextNode] = 0;
+                --countIncompleteNodes;
+            }
+            while (countIncompleteNodes != 0);
             return order;
+        }
+
+        public static int ParallelTime(int minTime, int numWorkers)
+        {
+            sCountActiveNodes = 0;
+            for (var i = 0; i < MAX_NUM_NODES; ++i)
+            {
+                sTimeUntilComplete[i] = -1;
+                if (sActiveNodes[i])
+                {
+                    ++sCountActiveNodes;
+                }
+            }
+
+            var workerMaking = new int[numWorkers];
+            for (var i = 0; i < numWorkers; ++i)
+            {
+                workerMaking[i] = -1;
+            }
+
+            var countIncompleteNodes = sCountActiveNodes;
+            for (var i = 0; i < MAX_SECONDS; ++i)
+            {
+                for (var w = 0; w < numWorkers; ++w)
+                {
+                    var currentNode = workerMaking[w];
+                    if (currentNode != -1)
+                    {
+                        if (sTimeUntilComplete[currentNode] == 0)
+                        {
+                            throw new InvalidProgramException($"Worker completed an already completed item {currentNode}");
+                        }
+                        --sTimeUntilComplete[currentNode];
+                        if (sTimeUntilComplete[currentNode] == 0)
+                        {
+                            --countIncompleteNodes;
+                            workerMaking[w] = -1;
+                            //Console.WriteLine($"Time {i} Completed {currentNode}");
+                            if (countIncompleteNodes == 0)
+                            {
+                                return i;
+                            }
+                        }
+                    }
+                }
+                for (var w = 0; w < numWorkers; ++w)
+                {
+                    if (workerMaking[w] == -1)
+                    {
+                        var makeNode = FindNextNodeToComplete();
+                        if (makeNode != -1)
+                        {
+                            var timeToComplete = minTime + 1 + makeNode - 'A';
+                            //Console.WriteLine($"Time {i} Worker {w} Making {makeNode} Time {timeToComplete}");
+                            workerMaking[w] = makeNode;
+                            sTimeUntilComplete[makeNode] = timeToComplete;
+                        }
+                    }
+                }
+            }
+            throw new InvalidProgramException($"Did not complete all items in {MAX_SECONDS}");
         }
 
         public static void Run()
