@@ -106,9 +106,9 @@ namespace Day08
             }
             else
             {
-                var result2 = -123;
+                var result2 = RootNodeValue();
                 Console.WriteLine($"Day08 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 40292;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -178,6 +178,47 @@ namespace Day08
                 {
                     sum += sMetadatas[n, m];
                 }
+            }
+            return sum;
+        }
+
+        public static long RootNodeValue()
+        {
+            return NodeValue(0);
+        }
+
+        static long NodeValue(int node)
+        {
+            var sum = 0L;
+            //If a node has no child nodes, its value is the sum of its metadata entries.
+            if (sChildsCount[node] == 0)
+            {
+                for (var m = 0; m < sMetadatasCount[node]; ++m)
+                {
+                    sum += sMetadatas[node, m];
+                }
+                return sum;
+            }
+            //However, if a node does have child nodes, the metadata entries become indexes which refer to those child nodes.
+            //A metadata entry of 1 refers to the first child node, 2 to the second, 3 to the third, and so on.
+            //The value of this node is the sum of the values of the child nodes referenced by the metadata entries.
+            //If a referenced child node does not exist, that reference is skipped.
+            //A child node can be referenced multiple time and counts each time it is referenced.
+            //A metadata entry of 0 does not refer to any child node.
+            for (var m = 0; m < sMetadatasCount[node]; ++m)
+            {
+                var childIndex = sMetadatas[node, m];
+                if (childIndex == 0)
+                {
+                    continue;
+                }
+                childIndex -= 1;
+                if (childIndex >= sChildsCount[node])
+                {
+                    continue;
+                }
+                var childNodeIndex = sChilds[node, childIndex];
+                sum += NodeValue(childNodeIndex);
             }
             return sum;
         }
