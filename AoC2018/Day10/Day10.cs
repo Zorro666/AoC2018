@@ -154,6 +154,14 @@ Of course, your message will be much longer and will take many more seconds to a
 
 What message will eventually appear in the sky?
 
+Your puzzle answer was LCPGPXGL.
+
+--- Part Two ---
+
+Good thing you didn't have to wait, because that would have taken a long time - much longer than the 3 seconds in the example above.
+
+Impressed by your sub-hour communication capabilities, the Elves are curious: exactly how many seconds would they have needed to wait for that message to appear?
+
 */
 
 namespace Day10
@@ -168,33 +176,57 @@ namespace Day10
         readonly static int[] sPosY0 = new int[MAX_NUM_POINTS];
         readonly static int[] sVelX0 = new int[MAX_NUM_POINTS];
         readonly static int[] sVelY0 = new int[MAX_NUM_POINTS];
+        static char[,] sGrid = null;
 
         static int sPointsCount;
         static int sMinX;
         static int sMinY;
         static int sMaxX;
         static int sMaxY;
+        static int sWidth;
+        static int sHeight;
 
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
             Parse(lines);
+            var grid = FindLetters(out int time);
 
             if (part1)
             {
-                var result1 = -666;
-                Console.WriteLine($"Day10 : Result1 {result1}");
-                var expected = 280;
-                if (result1 != expected)
+                var result1 = grid;
+                Console.WriteLine($"Day10 : Result1");
+                var expected = new string[] {
+"#........####...#####....####...#####...#....#...####...#.....",
+"#.......#....#..#....#..#....#..#....#..#....#..#....#..#.....",
+"#.......#.......#....#..#.......#....#...#..#...#.......#.....",
+"#.......#.......#....#..#.......#....#...#..#...#.......#.....",
+"#.......#.......#####...#.......#####.....##....#.......#.....",
+"#.......#.......#.......#..###..#.........##....#..###..#.....",
+"#.......#.......#.......#....#..#........#..#...#....#..#.....",
+"#.......#.......#.......#....#..#........#..#...#....#..#.....",
+"#.......#....#..#.......#...##..#.......#....#..#...##..#.....",
+"######...####...#........###.#..#.......#....#...###.#..######"
+                };
+                if (expected.Length != result1.Length)
                 {
-                    throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
+                    LogGrid(result1);
+                    throw new InvalidProgramException($"Part1 is broken Lengths do not match {result1.Length} != {expected.Length}");
+                }
+                for (var y = 0; y < expected.Length; ++y)
+                {
+                    if (result1[y] != expected[y])
+                    {
+                        LogGrid(result1);
+                        throw new InvalidProgramException($"Part1 is broken lines {y}  do not match {result1[y]} != {expected[y]}");
+                    }
                 }
             }
             else
             {
-                var result2 = -123;
+                var result2 = time;
                 Console.WriteLine($"Day10 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 10639;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -204,15 +236,19 @@ namespace Day10
 
         public static void Parse(string[] lines)
         {
+            sGrid = null;
             sMinX = int.MaxValue;
             sMinY = int.MaxValue;
             sMaxX = int.MinValue;
-            sMaxX = int.MinValue;
-            // <position=< 9,  1> velocity=< 0,  2>
+            sMaxY = int.MinValue;
+            sWidth = 0;
+            sHeight = 0;
+
+            // position=< 9,  1> velocity=< 0,  2>
             foreach (var line in lines)
             {
                 var tokens = line.Trim().Split('>');
-                // tokens[0] = '<position=< 9,  1'
+                // tokens[0] = 'position=< 9,  1'
                 // tokens[1] = 'velocity=< 0,  2'
                 // tokens[2] = ''
                 if (tokens.Length != 3)
@@ -223,9 +259,9 @@ namespace Day10
                 {
                     throw new InvalidProgramException($"Unexpected line '{line}' expected final token to be '' got '{tokens[2]}'");
                 }
-                if (!tokens[0].Trim().StartsWith("<position=<"))
+                if (!tokens[0].Trim().StartsWith("position=<"))
                 {
-                    throw new InvalidProgramException($"Unexpected line '{line}' expected line to start with '<position=<' got '{tokens[0]}'");
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected line to start with 'position=<' got '{tokens[0]}'");
                 }
                 if (!tokens[1].Trim().StartsWith("velocity=<"))
                 {
@@ -241,7 +277,7 @@ namespace Day10
                 {
                     throw new InvalidProgramException($"Unexpected line '{line}' expected 2 tokens for velocity got {velocityTokens.Length}");
                 }
-                var posXToken = positionTokens[0].Trim().Split('<')[2];
+                var posXToken = positionTokens[0].Trim().Split('<')[1];
                 var posYToken = positionTokens[1].Trim();
                 sPosX0[sPointsCount] = int.Parse(posXToken);
                 sPosY0[sPointsCount] = int.Parse(posYToken);
@@ -249,13 +285,12 @@ namespace Day10
                 var velYToken = velocityTokens[1].Trim();
                 sVelX0[sPointsCount] = int.Parse(velXToken);
                 sVelY0[sPointsCount] = int.Parse(velYToken);
+                sPosX[sPointsCount] = sPosX0[sPointsCount];
+                sPosY[sPointsCount] = sPosY0[sPointsCount];
 
-                sMinX = Math.Min(sMinX, sPosX0[sPointsCount]);
-                sMaxX = Math.Max(sMaxX, sPosX0[sPointsCount]);
-                sMinY = Math.Min(sMinY, sPosY0[sPointsCount]);
-                sMaxY = Math.Max(sMaxY, sPosY0[sPointsCount]);
                 ++sPointsCount;
             }
+            ComputeGrid();
         }
 
         public static void Simulate(int nSteps)
@@ -265,42 +300,165 @@ namespace Day10
                 sPosX[i] = sPosX0[i] + sVelX0[i] * nSteps;
                 sPosY[i] = sPosY0[i] + sVelY0[i] * nSteps;
             }
+            ComputeGrid();
+        }
+
+        static bool ComputeGrid()
+        {
+            if (sGrid == null)
+            {
+                sMinX = int.MaxValue;
+                sMinY = int.MaxValue;
+                sMaxX = int.MinValue;
+                sMaxY = int.MinValue;
+                for (var i = 0; i < sPointsCount; ++i)
+                {
+                    sMinX = Math.Min(sMinX, sPosX[i]);
+                    sMinY = Math.Min(sMinY, sPosY[i]);
+                    sMaxX = Math.Max(sMaxX, sPosX[i]);
+                    sMaxY = Math.Max(sMaxY, sPosY[i]);
+                }
+                sHeight = sMaxY - sMinY + 1;
+                sWidth = sMaxX - sMinX + 1;
+                if ((sWidth > 128) || (sHeight > 128))
+                {
+                    return false;
+                }
+                sGrid = new char[sWidth, sHeight];
+            }
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    sGrid[x, y] = '.';
+                }
+            }
+
+            for (var i = 0; i < sPointsCount; ++i)
+            {
+                var x = sPosX[i] - sMinX;
+                var y = sPosY[i] - sMinY;
+                if ((x >= 0) && (x < sWidth) && (y >= 0) && (y < sHeight))
+                {
+                    sGrid[x, y] = '#';
+                }
+            }
+            return true;
         }
 
         public static string[] MapOutput()
         {
-            var height = sMaxY - sMinY + 1;
-            var width = sMaxX - sMinX + 1;
-            var output = new string[height];
-            for (var i = 0; i < height; ++i)
+            var output = new string[sHeight];
+            for (var y = 0; y < sHeight; ++y)
             {
-                var y = sMinY + i;
                 var line = "";
-                for (var j = 0; j < width; ++j)
+                for (var x = 0; x < sWidth; ++x)
                 {
-                    var x = sMinX + j;
-                    bool found = false;
-                    for (var p = 0; p < sPointsCount; ++p)
-                    {
-                        if ((sPosX[p] == x) && (sPosY[p] == y))
-                        {
-                            found = true;
-                            break;
-                        }
-
-                    }
-                    if (found)
-                    {
-                        line += "#";
-                    }
-                    else
-                    {
-                        line += ".";
-                    }
+                    line += sGrid[x, y];
                 }
-                output[i] = line;
+                output[y] = line;
             }
             return output;
+        }
+
+        public static string[] FindLetters(out int time)
+        {
+            const int MAX_NUM_CYCLES = 1024 * 1024 * 128;
+            for (var i = 0; i < MAX_NUM_CYCLES; ++i)
+            {
+                Simulate(i);
+                var grid = FoundLetters();
+                if (grid != null)
+                {
+                    time = i;
+                    return grid;
+                }
+            }
+            throw new InvalidProgramException($"Failed to find letters after {MAX_NUM_CYCLES} cycles");
+        }
+
+        static string[] FoundLetters()
+        {
+            sGrid = null;
+            ComputeGrid();
+            //Console.WriteLine($"{sWidth}x{sHeight}");
+            if (sGrid == null)
+            {
+                return null;
+            }
+            var grid = MapOutput();
+            if (SmallestConnectedPoints() > 8)
+            {
+                return grid;
+            }
+            return null;
+        }
+
+        static int SmallestConnectedPoints()
+        {
+            bool[,] visited = new bool[sWidth, sHeight];
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    visited[x, y] = false;
+                }
+            }
+
+            var minConnected = int.MaxValue;
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    if (visited[x, y] == false)
+                    {
+                        var groupSize = SmallestConnectedPointsImpl(x, y, ref visited);
+                        if (groupSize > 0)
+                        {
+                            minConnected = Math.Min(minConnected, groupSize);
+                        }
+                    }
+                }
+            }
+            return minConnected;
+        }
+
+        static int SmallestConnectedPointsImpl(int x, int y, ref bool[,] visited)
+        {
+            if ((x < 0) || (y < 0) || (x >= sWidth) || (y >= sHeight))
+            {
+                return 0;
+            }
+            if (sGrid[x, y] == '.')
+            {
+                return 0;
+            }
+            if (visited[x, y])
+            {
+                return 0;
+            }
+
+            visited[x, y] = true;
+
+            int connectedCount = 1;
+            connectedCount += SmallestConnectedPointsImpl(x - 1, y - 1, ref visited);
+            connectedCount += SmallestConnectedPointsImpl(x - 1, y + 0, ref visited);
+            connectedCount += SmallestConnectedPointsImpl(x - 1, y + 1, ref visited);
+            connectedCount += SmallestConnectedPointsImpl(x + 1, y - 1, ref visited);
+            connectedCount += SmallestConnectedPointsImpl(x + 1, y + 0, ref visited);
+            connectedCount += SmallestConnectedPointsImpl(x + 1, y + 1, ref visited);
+            connectedCount += SmallestConnectedPointsImpl(x + 0, y - 1, ref visited);
+            connectedCount += SmallestConnectedPointsImpl(x + 0, y + 1, ref visited);
+
+            return connectedCount;
+        }
+
+        static void LogGrid(string[] grid)
+        {
+            foreach (var line in grid)
+            {
+                Console.WriteLine($"{line}");
+            }
         }
 
         public static void Run()
