@@ -17,13 +17,25 @@ namespace Day11
 
         [Test]
         [TestCase(18, 33, 45)]
-        [TestCase(42, 21, 51)]
+        [TestCase(42, 21, 61)]
         public void FindLargest3x3(int serialNumber, int expectedX, int expectedY)
         {
             Program.ComputePowerLevels(serialNumber);
             (int x, int y) = Program.FindLargest3x3();
             Assert.That(x, Is.EqualTo(expectedX));
             Assert.That(y, Is.EqualTo(expectedY));
+        }
+
+        [Test]
+        [TestCase(18, 90, 269, 16)]
+        [TestCase(42, 232, 251, 12)]
+        public void FindLargestSquare(int serialNumber, int expectedX, int expectedY, int expectedSize)
+        {
+            Program.ComputePowerLevels(serialNumber);
+            (int x, int y, int size) = Program.FindLargestSquare();
+            Assert.That(x, Is.EqualTo(expectedX));
+            Assert.That(y, Is.EqualTo(expectedY));
+            Assert.That(size, Is.EqualTo(expectedSize));
         }
     }
 }
