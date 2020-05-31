@@ -6,10 +6,28 @@ namespace Day12
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day12(string directions, int expected)
+        [TestCase(new string[] {
+"initial state: #..#.#..##......###...###",
+"",
+"...## => #",
+"..#.. => #",
+".#... => #",
+".#.#. => #",
+".#.## => #",
+".##.. => #",
+".#### => #",
+"#.#.# => #",
+"#.### => #",
+"##.#. => #",
+"##.## => #",
+"###.. => #",
+"###.# => #",
+"####. => #"
+        }, 20, 35)]
+        public void NumberOfPlants(string[] input, int generations, int expected)
         {
-            Assert.Fail();
+            Program.Parse(input);
+            Assert.That(Program.NumberOfPlants(generations), Is.EqualTo(expected));
         }
     }
 }
