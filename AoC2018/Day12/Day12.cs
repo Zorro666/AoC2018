@@ -82,12 +82,29 @@ Adding up all the numbers of plant-containing pots after the 20th generation pro
 
 After 20 generations, what is the sum of the numbers of all pots which contain a plant?
 
+Your puzzle answer was 4110.
+
+--- Part Two ---
+
+You realize that 20 generations aren't enough. After all, these plants will need to last another 1500 years to even reach your timeline, not to mention your future.
+
+After fifty billion (50000000000) generations, what is the sum of the numbers of all pots which contain a plant?
+
 */
 
 namespace Day12
 {
     class Program
     {
+        const int MAX_NUM_PLANTS = 1024 * 1024;
+        const int MAX_NUM_RULES = 1024;
+        static int sRulesCount;
+        readonly static byte[,] sMatches = new byte[MAX_NUM_RULES, 5];
+        readonly static byte[] sOutputs = new byte[MAX_NUM_RULES];
+        readonly static byte[] sCurrentState = new byte[MAX_NUM_PLANTS];
+        readonly static byte[] sInitialState = new byte[MAX_NUM_PLANTS];
+        static int sInitialStateCount;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
@@ -95,9 +112,9 @@ namespace Day12
 
             if (part1)
             {
-                var result1 = NumberOfPlants(20);
+                var result1 = PlantSum(20);
                 Console.WriteLine($"Day12 : Result1 {result1}");
-                var expected = 280;
+                var expected = 4110;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -117,11 +134,158 @@ namespace Day12
 
         public static void Parse(string[] lines)
         {
+            if (lines.Length < 3)
+            {
+                throw new InvalidProgramException($"Invalid input need at least 3 lines got {lines.Length}");
+            }
+            if (!lines[0].StartsWith("initial state: "))
+            {
+                throw new InvalidProgramException($"Invalid first line '{lines[0]}' expected 'initial state: '");
+            }
+            //'initial state: #..#.#..##......###...###'
+            var initialState = lines[0].Split(':')[1].Trim();
+            //Console.WriteLine($"{initialState}");
+            for (var c = 0; c < initialState.Length; ++c)
+            {
+                if ((initialState[c] != '.') && (initialState[c] != '#'))
+                {
+                    throw new InvalidProgramException($"Invalid initialState line '{initialState}' input must be '.' or '#' '{initialState[c]}'");
+                }
+                sInitialState[c] = (byte)((initialState[c] == '.') ? 0 : 1);
+            }
+            sInitialStateCount = initialState.Length;
+
+            //''
+            if (lines[1].Length != 0)
+            {
+                throw new InvalidProgramException($"Invalid second line '{lines[0]}' expected empty line got '{lines[1]}'");
+            }
+
+            sRulesCount = 0;
+            for (var i = 2; i < lines.Length; ++i)
+            {
+                //'...## => #'
+                //'..#.. => #'
+                var ruleInput = lines[i].Trim();
+                var tokens = ruleInput.Split();
+                if (tokens.Length != 3)
+                {
+                    throw new InvalidProgramException($"Invalid rules line '{ruleInput}' expected 3 tokens got '{tokens.Length}'");
+                }
+                if (tokens[1] != "=>")
+                {
+                    throw new InvalidProgramException($"Invalid rules line '{ruleInput}' expected '=>' got '{tokens[1]}'");
+                }
+                var match = tokens[0];
+                if (match.Length != 5)
+                {
+                    throw new InvalidProgramException($"Invalid rules line '{ruleInput}' match rule must be 5 characters long '{match}' {match.Length}");
+                }
+                var output = tokens[2];
+                if (output.Length != 1)
+                {
+                    throw new InvalidProgramException($"Invalid rules line '{ruleInput}' output rule must be a single character '{output}' {output.Length}");
+                }
+                for (var c = 0; c < 5; ++c)
+                {
+                    if ((match[c] != '.') && (match[c] != '#'))
+                    {
+                        throw new InvalidProgramException($"Invalid rules line '{ruleInput}' match characters must be '.' or '#' '{match[c]}'");
+                    }
+                    sMatches[sRulesCount, c] = (byte)((match[c] == '.') ? 0 : 1);
+                }
+                if ((output[0] != '.') && (output[0] != '#'))
+                {
+                    throw new InvalidProgramException($"Invalid rules line '{ruleInput}' output must be '.' or '#' '{output[0]}'");
+                }
+                sOutputs[sRulesCount] = (byte)((output[0] == '.') ? 0 : 1);
+                ++sRulesCount;
+            }
+        }
+
+        public static int PlantSum(int generations)
+        {
+            Simulate(generations);
+            var plantSum = 0;
+            for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+            {
+                if (sCurrentState[i] == 1)
+                {
+                    plantSum += i - (MAX_NUM_PLANTS / 2);
+                }
+            }
+
+            return plantSum;
         }
 
         public static int NumberOfPlants(int generations)
         {
-            return int.MinValue;
+            Simulate(generations);
+            var plantCount = 0;
+            for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+            {
+                plantCount += sCurrentState[i];
+            }
+
+            return plantCount;
+        }
+
+        static void Simulate(int generations)
+        {
+            for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+            {
+                sCurrentState[i] = 0;
+            }
+            for (var i = 0; i < sInitialStateCount; ++i)
+            {
+                sCurrentState[i + MAX_NUM_PLANTS / 2] = sInitialState[i];
+            }
+            var nextState = new byte[MAX_NUM_PLANTS];
+
+            for (var g = 0; g < generations; ++g)
+            {
+                var minPlantPos = int.MaxValue;
+                var maxPlantPos = int.MinValue;
+                for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+                {
+                    if (sCurrentState[i] == 1)
+                    {
+                        minPlantPos = Math.Min(minPlantPos, i);
+                        maxPlantPos = Math.Max(maxPlantPos, i);
+                    }
+                    nextState[i] = 0;
+                }
+                minPlantPos -= 10;
+                minPlantPos = Math.Max(minPlantPos, 2);
+                maxPlantPos += 10;
+                maxPlantPos = Math.Min(maxPlantPos, MAX_NUM_PLANTS - 2);
+                for (var i = minPlantPos; i < maxPlantPos; ++i)
+                {
+                    byte output = 0;
+                    for (var r = 0; r < sRulesCount; ++r)
+                    {
+                        bool match = true;
+                        for (var c = 0; c < 5; ++c)
+                        {
+                            if (sMatches[r, c] != sCurrentState[i + c - 2])
+                            {
+                                match = false;
+                                break;
+                            }
+                        }
+                        if (match)
+                        {
+                            output = sOutputs[r];
+                            break;
+                        }
+                    }
+                    nextState[i] = output;
+                }
+                for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+                {
+                    sCurrentState[i] = nextState[i];
+                }
+            }
         }
 
         public static void Run()
