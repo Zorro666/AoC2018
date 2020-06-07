@@ -6,10 +6,20 @@ namespace Day13
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day13(string directions, int expected)
+        [TestCase(new string[] {
+@"/->-\        ",
+@"|   |  /----\",
+@"| /-+--+-\  |",
+@"| | |  | v  |",
+@"\-+-/  \-+--/",
+@"  \------/   ",
+        }, 7, 3, TestName = "FirstCrash 7,3")]
+        public void FirstCrash(string[] input, int expectedX, int expectedY)
         {
-            Assert.Fail();
+            Program.Parse(input);
+            var (x, y) = Program.FirstCrash();
+            Assert.That(x, Is.EqualTo(expectedX));
+            Assert.That(y, Is.EqualTo(expectedY));
         }
     }
 }
