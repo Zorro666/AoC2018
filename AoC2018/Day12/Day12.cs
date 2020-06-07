@@ -96,14 +96,17 @@ namespace Day12
 {
     class Program
     {
-        const int MAX_NUM_PLANTS = 1024 * 1024;
+        const int MAX_NUM_GENERATIONS = 1024;
+        const int MAX_NUM_PLANTS = 1024 * 2;
         const int MAX_NUM_RULES = 1024;
         static int sRulesCount;
         readonly static byte[,] sMatches = new byte[MAX_NUM_RULES, 5];
         readonly static byte[] sOutputs = new byte[MAX_NUM_RULES];
+        readonly static byte[] sNextState = new byte[MAX_NUM_PLANTS];
         readonly static byte[] sCurrentState = new byte[MAX_NUM_PLANTS];
         readonly static byte[] sInitialState = new byte[MAX_NUM_PLANTS];
         static int sInitialStateCount;
+        static string sStableState;
 
         private Program(string inputFile, bool part1)
         {
@@ -122,9 +125,9 @@ namespace Day12
             }
             else
             {
-                var result2 = -123;
+                var result2 = PredictPlantSum(50000000000);
                 Console.WriteLine($"Day12 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 2650000000466;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -218,19 +221,67 @@ namespace Day12
             return plantSum;
         }
 
-        public static int NumberOfPlants(int generations)
+        static int CountPlants()
         {
-            Simulate(generations);
             var plantCount = 0;
             for (var i = 0; i < MAX_NUM_PLANTS; ++i)
             {
                 plantCount += sCurrentState[i];
             }
-
             return plantCount;
         }
 
-        static void Simulate(int generations)
+        public static int NumberOfPlants(int generations)
+        {
+            Simulate(generations);
+            return CountPlants();
+        }
+
+        static void NextGeneration()
+        {
+            var (minPlantPos, maxPlantPos) = FindStartEnd();
+            for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+            {
+                sNextState[i] = 0;
+            }
+
+            minPlantPos -= 10;
+            if (minPlantPos < 0)
+            {
+                throw new InvalidProgramException($"Plant array not big enough");
+            }
+            minPlantPos = Math.Max(minPlantPos, 2);
+            maxPlantPos += 10;
+            if (maxPlantPos >= MAX_NUM_PLANTS)
+            {
+                throw new InvalidProgramException($"Plant array not big enough");
+            }
+            maxPlantPos = Math.Min(maxPlantPos, MAX_NUM_PLANTS - 2);
+            for (var i = minPlantPos; i < maxPlantPos; ++i)
+            {
+                byte output = 0;
+                for (var r = 0; r < sRulesCount; ++r)
+                {
+                    bool match = true;
+                    for (var c = 0; c < 5; ++c)
+                    {
+                        if (sMatches[r, c] != sCurrentState[i + c - 2])
+                        {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match)
+                    {
+                        output = sOutputs[r];
+                        break;
+                    }
+                }
+                sNextState[i] = output;
+            }
+        }
+
+        static void InitialiseGeneration()
         {
             for (var i = 0; i < MAX_NUM_PLANTS; ++i)
             {
@@ -240,52 +291,158 @@ namespace Day12
             {
                 sCurrentState[i + MAX_NUM_PLANTS / 2] = sInitialState[i];
             }
-            var nextState = new byte[MAX_NUM_PLANTS];
 
+        }
+
+        static void UpdateCurrentState()
+        {
+            for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+            {
+                sCurrentState[i] = sNextState[i];
+            }
+        }
+
+        static void Simulate(int generations)
+        {
+            InitialiseGeneration();
             for (var g = 0; g < generations; ++g)
             {
-                var minPlantPos = int.MaxValue;
-                var maxPlantPos = int.MinValue;
-                for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+                NextGeneration();
+                UpdateCurrentState();
+            }
+        }
+
+        static string OutputState()
+        {
+            var (start, end) = FindStartEnd();
+            var state = "";
+            for (var i = start; i <= end; ++i)
+            {
+                if (sCurrentState[i] == 1)
                 {
-                    if (sCurrentState[i] == 1)
-                    {
-                        minPlantPos = Math.Min(minPlantPos, i);
-                        maxPlantPos = Math.Max(maxPlantPos, i);
-                    }
-                    nextState[i] = 0;
+                    state += '#';
                 }
-                minPlantPos -= 10;
-                minPlantPos = Math.Max(minPlantPos, 2);
-                maxPlantPos += 10;
-                maxPlantPos = Math.Min(maxPlantPos, MAX_NUM_PLANTS - 2);
-                for (var i = minPlantPos; i < maxPlantPos; ++i)
+                else
                 {
-                    byte output = 0;
-                    for (var r = 0; r < sRulesCount; ++r)
-                    {
-                        bool match = true;
-                        for (var c = 0; c < 5; ++c)
-                        {
-                            if (sMatches[r, c] != sCurrentState[i + c - 2])
-                            {
-                                match = false;
-                                break;
-                            }
-                        }
-                        if (match)
-                        {
-                            output = sOutputs[r];
-                            break;
-                        }
-                    }
-                    nextState[i] = output;
-                }
-                for (var i = 0; i < MAX_NUM_PLANTS; ++i)
-                {
-                    sCurrentState[i] = nextState[i];
+                    state += '.';
                 }
             }
+            return state;
+        }
+
+        static (int m, int c) FindStableState(int maxGenerations)
+        {
+            var numSameGenerations = 0;
+            InitialiseGeneration();
+            var prevNumPlants = int.MinValue;
+            var prevState = "";
+            var prevM = int.MaxValue;
+            var prevC = int.MaxValue;
+            var prevEndC = int.MaxValue;
+            var prevStart = int.MaxValue;
+            var prevEnd = int.MinValue;
+            for (var g = 0; g < maxGenerations; ++g)
+            {
+                var thisState = "";
+                NextGeneration();
+                UpdateCurrentState();
+                var numPlants = CountPlants();
+                var thisM = prevM;
+                var thisC = prevC;
+                var thisEndC = prevEndC;
+                var thisStart = prevStart;
+                var thisEnd = prevEnd;
+                bool theSame = false;
+                if (numPlants == prevNumPlants)
+                {
+                    thisState = OutputState();
+                    if (thisState == prevState)
+                    {
+                        (thisStart, thisEnd) = FindStartEnd();
+                        thisStart -= MAX_NUM_PLANTS / 2;
+                        thisEnd -= MAX_NUM_PLANTS / 2;
+                        // yPrev = m * gPrev + c
+                        // yThis = m * gThis + c
+                        // gThis = gPrev + 1
+                        // yThis = m * (gPrev + 1) + c
+                        // yThis = m * gPrev + c + m
+                        // yThis = yPrev + m
+                        // m = yThis - yPrev
+                        // c = yThis - m * gThis
+                        // c = yPrev - m * gPrev
+                        thisM = thisStart - prevStart;
+                        if (thisM == prevM)
+                        {
+                            var endM = thisEnd - prevEnd;
+                            if (thisM == endM)
+                            {
+                                thisC = thisStart - thisM * g;
+                                if (thisC == prevC)
+                                {
+                                    thisEndC = thisEnd - endM * g;
+                                    if (thisEndC == prevEndC)
+                                    {
+                                        theSame = true;
+                                        ++numSameGenerations;
+                                        if (numSameGenerations > 128)
+                                        {
+                                            sStableState = thisState;
+                                            return (thisM, thisC);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (!theSame)
+                {
+                    numSameGenerations = 0;
+                }
+                prevNumPlants = numPlants;
+                prevState = thisState;
+                prevM = thisM;
+                prevC = thisC;
+                prevEndC = thisEndC;
+                prevStart = thisStart;
+                prevEnd = thisEnd;
+            }
+            throw new InvalidProgramException($"Failed to find stable state after {maxGenerations} generations");
+        }
+
+        static (int start, int end) FindStartEnd()
+        {
+            var start = int.MaxValue;
+            var end = int.MinValue;
+            for (var i = 0; i < MAX_NUM_PLANTS; ++i)
+            {
+                if (sCurrentState[i] == 1)
+                {
+                    start = Math.Min(start, i);
+                    end = Math.Max(end, i);
+                }
+            }
+            return (start, end);
+        }
+
+        public static long PredictPlantSum(long generations)
+        {
+            var (m, c) = FindStableState(MAX_NUM_GENERATIONS);
+            var (start, end) = FindStartEnd();
+            start -= MAX_NUM_PLANTS / 2;
+            end -= MAX_NUM_PLANTS / 2;
+            Console.WriteLine($"m:{m} c:{c} {start}:{end}");
+            Console.WriteLine($"Stable:`{sStableState}`");
+            var plantSum = 0L;
+            var startPosition = m * (generations - 1) + c;
+            for (var i = 0; i < sStableState.Length; ++i)
+            {
+                if (sStableState[i] == '#')
+                {
+                    plantSum += startPosition + i;
+                }
+            }
+            return plantSum;
         }
 
         public static void Run()

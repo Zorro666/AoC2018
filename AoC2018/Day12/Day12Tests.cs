@@ -216,5 +216,85 @@ namespace Day12
             Program.Parse(input);
             Assert.That(Program.PlantSum(generations), Is.EqualTo(expected));
         }
+
+        [Test]
+        [TestCase(new string[] {
+"initial state: #..#.#..##......###...###",
+"",
+"...## => #",
+"..#.. => #",
+".#... => #",
+".#.#. => #",
+".#.## => #",
+".##.. => #",
+".#### => #",
+"#.#.# => #",
+"#.### => #",
+"##.#. => #",
+"##.## => #",
+"###.. => #",
+"###.# => #",
+"####. => #"
+        }, 300, TestName = "PredictPlantSum 300")]
+        [TestCase(new string[] {
+"initial state: #..#.#..##......###...###",
+"",
+"...## => #",
+"..#.. => #",
+".#... => #",
+".#.#. => #",
+".#.## => #",
+".##.. => #",
+".#### => #",
+"#.#.# => #",
+"#.### => #",
+"##.#. => #",
+"##.## => #",
+"###.. => #",
+"###.# => #",
+"####. => #"
+        }, 400, TestName = "PredictPlantSum 400")]
+        [TestCase(new string[] {
+"initial state: #..#.#..##......###...###",
+"",
+"...## => #",
+"..#.. => #",
+".#... => #",
+".#.#. => #",
+".#.## => #",
+".##.. => #",
+".#### => #",
+"#.#.# => #",
+"#.### => #",
+"##.#. => #",
+"##.## => #",
+"###.. => #",
+"###.# => #",
+"####. => #"
+        }, 500, TestName = "PredictPlantSum 500")]
+        [TestCase(new string[] {
+"initial state: #..#.#..##......###...###",
+"",
+"...## => #",
+"..#.. => #",
+".#... => #",
+".#.#. => #",
+".#.## => #",
+".##.. => #",
+".#### => #",
+"#.#.# => #",
+"#.### => #",
+"##.#. => #",
+"##.## => #",
+"###.. => #",
+"###.# => #",
+"####. => #"
+        }, 1000, TestName = "PredictPlantSum 1000")]
+        public void PredictPlantSum(string[] input, int generations)
+        {
+            Program.Parse(input);
+            var expected = Program.PlantSum(generations);
+            Assert.That(Program.PredictPlantSum(generations), Is.EqualTo(expected));
+        }
     }
 }
