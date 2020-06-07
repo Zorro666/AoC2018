@@ -234,7 +234,7 @@ namespace Day13
 {
     class Program
     {
-        const int MAX_NUM_STEPS = 1024;
+        const int MAX_NUM_STEPS = 1024 * 16;
         const int MAX_MAP_SIZE = 1024;
         const int MAX_NUM_CARTS = 64;
         readonly static char[,] sMap = new char[MAX_MAP_SIZE, MAX_MAP_SIZE];
@@ -264,9 +264,9 @@ namespace Day13
             }
             else
             {
-                var result2 = -123;
+                var result2 = LastCart();
                 Console.WriteLine($"Day13 : Result2 {result2}");
-                var expected = 1797;
+                var expected = (84, 90);
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -330,7 +330,18 @@ namespace Day13
 
         public static (int x, int y) FirstCrash()
         {
+            return Simulate(true);
+        }
+
+        public static (int x, int y) LastCart()
+        {
+            return Simulate(false);
+        }
+
+        public static (int x, int y) Simulate(bool firstCrash)
+        {
             var cartOrder = new int[sNumCarts];
+            int activeCarts = sNumCarts;
             for (var i = 0; i < MAX_NUM_STEPS; ++i)
             {
                 for (var c = 0; c < sNumCarts; ++c)
@@ -363,9 +374,14 @@ namespace Day13
                 for (var c = 0; c < sNumCarts; ++c)
                 {
                     var cartIndex = cartOrder[c];
-
                     var x = sCartsX[cartIndex];
                     var y = sCartsY[cartIndex];
+
+                    if ((x == MAX_MAP_SIZE) && (y == MAX_MAP_SIZE))
+                    {
+                        continue;
+                    }
+
                     var dx = sCartsDX[cartIndex];
                     var dy = sCartsDY[cartIndex];
 
@@ -381,12 +397,37 @@ namespace Day13
                         }
                         if ((sCartsX[c2] == x) && (sCartsY[c2] == y))
                         {
-                            return (x, y);
+                            if (firstCrash)
+                            {
+                                return (x, y);
+                            }
+
+                            activeCarts -= 2;
+
+                            sCartsX[cartIndex] = MAX_MAP_SIZE;
+                            sCartsY[cartIndex] = MAX_MAP_SIZE;
+                            sCartsDX[cartIndex] = 0;
+                            sCartsDY[cartIndex] = 0;
+
+                            sCartsX[c2] = MAX_MAP_SIZE;
+                            sCartsY[c2] = MAX_MAP_SIZE;
+                            sCartsDX[c2] = 0;
+                            sCartsDY[c2] = 0;
+
+                            x = MAX_MAP_SIZE;
+                            y = MAX_MAP_SIZE;
+
+                            break;
                         }
                     }
 
                     sCartsX[cartIndex] = x;
                     sCartsY[cartIndex] = y;
+
+                    if ((x == MAX_MAP_SIZE) && (y == MAX_MAP_SIZE))
+                    {
+                        continue;
+                    }
 
                     var mapC = sMap[x, y];
                     var newDX = dx;
@@ -450,6 +491,20 @@ namespace Day13
 
                     sCartsDX[cartIndex] = newDX;
                     sCartsDY[cartIndex] = newDY;
+                }
+                if (activeCarts == 1)
+                {
+                    for (var c = 0; c < sNumCarts; ++c)
+                    {
+                        var x = sCartsX[c];
+                        var y = sCartsY[c];
+
+                        if ((x == MAX_MAP_SIZE) && (y == MAX_MAP_SIZE))
+                        {
+                            continue;
+                        }
+                        return (x, y);
+                    }
                 }
             }
             throw new InvalidProgramException($"No crash found after {MAX_NUM_STEPS} steps");
