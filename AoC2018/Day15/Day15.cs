@@ -318,9 +318,16 @@ namespace Day15
 {
     class Program
     {
+        const int MAX_MAP_SIZE = 128;
+        readonly static char[,] sMap = new char[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        static int sWidth;
+        static int sHeight;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            Parse(lines);
+
             if (part1)
             {
                 long result1 = -666;
@@ -341,6 +348,50 @@ namespace Day15
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
                 }
             }
+        }
+
+        public static void Parse(string[] lines)
+        {
+            sHeight = lines.Length;
+            if (sHeight == 0)
+            {
+                throw new InvalidProgramException($"Invalid map no input");
+            }
+            sWidth = lines[0].Trim().Length;
+            for (var y = 0; y < sHeight; ++y)
+            {
+                var line = lines[y];
+                var width = line.Trim().Length;
+                if (width != sWidth)
+                {
+                    throw new InvalidProgramException($"Unexpected width at line[{y}] {width} Expected:{sWidth}");
+                }
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    sMap[x, y] = line[x];
+                }
+            }
+        }
+
+        public static (int x, int y) TurnOrder(int turn)
+        {
+            var turnCount = 0;
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    var cell = sMap[x, y];
+                    if ((cell == 'G') || (cell == 'E'))
+                    {
+                        if (turnCount == turn)
+                        {
+                            return (x, y);
+                        }
+                        ++turnCount;
+                    }
+                }
+            }
+            throw new InvalidProgramException($"Did not find object to move at {turn}");
         }
 
         public static void Run()
