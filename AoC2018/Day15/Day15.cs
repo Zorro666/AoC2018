@@ -320,6 +320,7 @@ namespace Day15
     {
         const int MAX_MAP_SIZE = 128;
         readonly static char[,] sMap = new char[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        readonly static int[,] sDistances = new int[MAX_MAP_SIZE, MAX_MAP_SIZE];
         static int sWidth;
         static int sHeight;
 
@@ -371,6 +372,352 @@ namespace Day15
                     sMap[x, y] = line[x];
                 }
             }
+        }
+
+        private static void Visit(int x, int y, int endX, int endY, ref int steps)
+        {
+            if (sMap[x, y] != '.')
+            {
+                return;
+            }
+            ++steps;
+            if (steps >= sDistances[x, y])
+            {
+                return;
+            }
+            sDistances[x, y] = steps;
+            if ((x == endX) && (y == endY))
+            {
+                return;
+            }
+            int newSteps;
+
+            newSteps = steps;
+            Visit(x - 1, y + 0, endX, endY, ref newSteps);
+
+            newSteps = steps;
+            Visit(x + 1, y + 0, endX, endY, ref newSteps);
+
+            newSteps = steps;
+            Visit(x + 0, y - 1, endX, endY, ref newSteps);
+
+            newSteps = steps;
+            Visit(x + 0, y + 1, endX, endY, ref newSteps);
+        }
+
+        private static int Distance(int fromX, int fromY, int toX, int toY)
+        {
+            if (sMap[toX, toY] != '.')
+            {
+                return int.MaxValue;
+            }
+            var oldCell = sMap[fromX, fromY];
+            if ((oldCell != 'E') && (oldCell != 'G'))
+            {
+                return int.MaxValue;
+            }
+            int steps;
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    sDistances[x, y] = int.MaxValue;
+                }
+            }
+            sMap[fromX, fromY] = '.';
+
+            // Reading order
+            steps = 0;
+            Visit(fromX + 0, fromY - 1, toX, toY, ref steps);
+
+            steps = 0;
+            Visit(fromX - 1, fromY + 0, toX, toY, ref steps);
+
+            steps = 0;
+            Visit(fromX + 1, fromY + 0, toX, toY, ref steps);
+
+            steps = 0;
+            Visit(fromX + 0, fromY + 1, toX, toY, ref steps);
+
+            sMap[fromX, fromY] = oldCell;
+            return sDistances[toX, toY];
+        }
+
+        private static bool GenerateDistanceMap(int fromX, int fromY)
+        {
+            var oldCell = sMap[fromX, fromY];
+            if (oldCell != '.')
+            {
+                return false;
+            }
+            int steps;
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    sDistances[x, y] = int.MaxValue;
+                }
+            }
+            sMap[fromX, fromY] = '.';
+
+            // Reading order
+            steps = 0;
+            Visit(fromX + 0, fromY - 1, MAX_MAP_SIZE, MAX_MAP_SIZE, ref steps);
+
+            steps = 0;
+            Visit(fromX - 1, fromY + 0, MAX_MAP_SIZE, MAX_MAP_SIZE, ref steps);
+
+            steps = 0;
+            Visit(fromX + 1, fromY + 0, MAX_MAP_SIZE, MAX_MAP_SIZE, ref steps);
+
+            steps = 0;
+            Visit(fromX + 0, fromY + 1, MAX_MAP_SIZE, MAX_MAP_SIZE, ref steps);
+
+            sMap[fromX, fromY] = oldCell;
+            return true;
+        }
+
+        private static bool FindClosestTarget(char enemy, ref int globalClosestX, ref int globalClosestY, ref int globalClosestDistance)
+        {
+            var closestDistance = MAX_MAP_SIZE * MAX_MAP_SIZE * 2;
+            (int x, int y) closestTarget = (-1, -1);
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    var cell = sMap[x, y];
+                    if (cell == enemy)
+                    {
+                        int distance;
+
+                        // Reading order
+                        distance = sDistances[x + 0, y - 1];
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+                        distance = sDistances[x - 1, y + 0];
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+                        distance = sDistances[x + 1, y + 0];
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+                        distance = sDistances[x + 0, y + 1];
+                        if (distance < closestDistance)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+                    }
+                }
+            }
+            if (closestDistance < globalClosestDistance)
+            {
+                globalClosestDistance = closestDistance;
+                globalClosestX = closestTarget.x;
+                globalClosestY = closestTarget.y;
+                return true;
+            }
+            return false;
+        }
+
+        public static (int x, int y) ClosestTarget(int fromX, int fromY)
+        {
+            // Find the enenmy
+            var enemy = sMap[fromX, fromY] switch
+            {
+                'E' => 'G',
+                'G' => 'E',
+                _ => throw new InvalidProgramException($"Invalid from location '{sMap[fromX, fromY]}'")
+
+            };
+            bool tie = false;
+
+            var closestDistance = MAX_MAP_SIZE * MAX_MAP_SIZE * 2;
+            (int x, int y) closestTarget = (-1, -1);
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    var cell = sMap[x, y];
+                    if (cell == enemy)
+                    {
+                        int distance;
+                        bool closer;
+
+                        // Reading order
+                        distance = Distance(fromX, fromY, x + 0, y - 1);
+                        closer = false;
+                        if (distance < closestDistance)
+                        {
+                            closer = true;
+                            tie = false;
+                        }
+                        if (distance == closestDistance)
+                        {
+                            tie = true;
+                            closer = true;
+                        }
+                        if (closer)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+
+                        distance = Distance(fromX, fromY, x - 1, y + 0);
+                        closer = false;
+                        if (distance < closestDistance)
+                        {
+                            closer = true;
+                            tie = false;
+                        }
+                        if (distance == closestDistance)
+                        {
+                            tie = true;
+                            closer = true;
+                        }
+                        if (closer)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+
+                        distance = Distance(fromX, fromY, x + 1, y + 0);
+                        closer = false;
+                        if (distance < closestDistance)
+                        {
+                            closer = true;
+                            tie = false;
+                        }
+                        if (distance == closestDistance)
+                        {
+                            tie = true;
+                            closer = true;
+                        }
+                        if (closer)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+
+                        distance = Distance(fromX, fromY, x + 0, y + 1);
+                        closer = false;
+                        if (distance < closestDistance)
+                        {
+                            closer = true;
+                            tie = false;
+                        }
+                        if (distance == closestDistance)
+                        {
+                            tie = true;
+                            closer = true;
+                        }
+                        if (closer)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+                    }
+                }
+            }
+
+            if (closestDistance == int.MaxValue)
+            {
+                throw new InvalidProgramException($"No target found");
+            }
+
+            if (tie)
+            {
+                // Reading Order
+                if (GenerateDistanceMap(fromX + 0, fromY - 1))
+                {
+                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
+                }
+                if (GenerateDistanceMap(fromX - 1, fromY + 0))
+                {
+                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
+                }
+                {
+                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
+                }
+                if (GenerateDistanceMap(fromX + 1, fromY + 0))
+                {
+                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
+                }
+                if (GenerateDistanceMap(fromX + 0, fromY + 1))
+                {
+                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
+                }
+            }
+
+            return closestTarget;
+        }
+
+        public static (int x, int y) MoveTowardsTarget(int fromX, int fromY)
+        {
+            // Find the enenmy
+            var enemy = sMap[fromX, fromY] switch
+            {
+                'E' => 'G',
+                'G' => 'E',
+                _ => throw new InvalidProgramException($"Invalid from location '{sMap[fromX, fromY]}'")
+            };
+
+            var closestDistance = MAX_MAP_SIZE * MAX_MAP_SIZE * 2;
+            int closestTargetX = int.MaxValue;
+            int closestTargetY = int.MaxValue;
+            int moveX;
+            int moveY;
+            (int, int) bestMove = (-1, -1);
+
+            // Reading Order
+            moveX = fromX + 0;
+            moveY = fromY - 1;
+            if (GenerateDistanceMap(moveX, moveY))
+            {
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
+                {
+                    bestMove = (moveX, moveY);
+                }
+            }
+
+            moveX = fromX - 1;
+            moveY = fromY + 0;
+            if (GenerateDistanceMap(moveX, moveY))
+            {
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
+                {
+                    bestMove = (moveX, moveY);
+                }
+            }
+
+            moveX = fromX + 1;
+            moveY = fromY + 0;
+            if (GenerateDistanceMap(moveX, moveY))
+            {
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
+                {
+                    bestMove = (moveX, moveY);
+                }
+            }
+
+            moveX = fromX + 0;
+            moveY = fromY + 1;
+            if (GenerateDistanceMap(moveX, moveY))
+            {
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
+                {
+                    bestMove = (moveX, moveY);
+                }
+            }
+            return bestMove;
         }
 
         public static (int x, int y) TurnOrder(int turn)

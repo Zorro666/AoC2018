@@ -69,5 +69,45 @@ namespace Day15
             Assert.That(x, Is.EqualTo(expectedX));
             Assert.That(y, Is.EqualTo(expectedY));
         }
+
+        [TestCase(
+            new string[] {
+"#######",
+"#E..G.#",
+"#...#.#",
+"#.G.#G#",
+"#######",
+                }, 1, 1, 4, 1, TestName = "ClosestTarget (4,1)")]
+        public void ClosestTarget(string[] map, int fromX, int fromY, int expectedX, int expectedY)
+        {
+            Program.Parse(map);
+            (var x, var y) = Program.ClosestTarget(fromX, fromY);
+            Assert.That(x, Is.EqualTo(expectedX));
+            Assert.That(y, Is.EqualTo(expectedY));
+        }
+
+        [TestCase(
+            new string[] {
+"#######",
+"#E..G.#",
+"#...#.#",
+"#.G.#G#",
+"#######",
+                }, 1, 1, 2, 1, TestName = "MoveTowardsTarget (2,1)")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.E...#",
+"#.....#",
+"#...G.#",
+"#######",
+                }, 2, 1, 3, 1, TestName = "MoveTowardsTarget (3,1)")]
+        public void MoveTowardsTarget(string[] map, int fromX, int fromY, int expectedX, int expectedY)
+        {
+            Program.Parse(map);
+            (var x, var y) = Program.MoveTowardsTarget(fromX, fromY);
+            Assert.That(x, Is.EqualTo(expectedX));
+            Assert.That(y, Is.EqualTo(expectedY));
+        }
     }
 }
