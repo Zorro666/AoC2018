@@ -319,7 +319,9 @@ namespace Day15
     class Program
     {
         const int MAX_MAP_SIZE = 128;
+        const int MAX_NUM_CHARACTERS = 128;
         readonly static char[,] sMap = new char[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        readonly static bool[,] sMoved = new bool[MAX_MAP_SIZE, MAX_MAP_SIZE];
         readonly static int[,] sDistances = new int[MAX_MAP_SIZE, MAX_MAP_SIZE];
         static int sWidth;
         static int sHeight;
@@ -443,9 +445,13 @@ namespace Day15
             return sDistances[toX, toY];
         }
 
-        private static bool GenerateDistanceMap(int fromX, int fromY)
+        private static bool GenerateDistanceMap(char enemy, int fromX, int fromY)
         {
             var oldCell = sMap[fromX, fromY];
+            if (oldCell == enemy)
+            {
+                sDistances[fromX, fromY] = 0;
+            }
             if (oldCell != '.')
             {
                 return false;
@@ -459,6 +465,7 @@ namespace Day15
                 }
             }
             sMap[fromX, fromY] = '.';
+            sDistances[fromX, fromY] = 0;
 
             // Reading order
             steps = 0;
@@ -479,7 +486,7 @@ namespace Day15
 
         private static bool FindClosestTarget(char enemy, ref int globalClosestX, ref int globalClosestY, ref int globalClosestDistance)
         {
-            var closestDistance = MAX_MAP_SIZE * MAX_MAP_SIZE * 2;
+            var closestDistance = globalClosestDistance;
             (int x, int y) closestTarget = (-1, -1);
             for (var y = 0; y < sHeight; ++y)
             {
@@ -489,6 +496,14 @@ namespace Day15
                     if (cell == enemy)
                     {
                         int distance;
+                        /*
+                        distance = sDistances[x + 0, y + 0];
+                        if (distance == 0)
+                        {
+                            closestDistance = distance;
+                            closestTarget = (x, y);
+                        }
+                        */
 
                         // Reading order
                         distance = sDistances[x + 0, y - 1];
@@ -540,7 +555,7 @@ namespace Day15
             };
             bool tie = false;
 
-            var closestDistance = MAX_MAP_SIZE * MAX_MAP_SIZE * 2;
+            var closestDistance = int.MaxValue;
             (int x, int y) closestTarget = (-1, -1);
             for (var y = 0; y < sHeight; ++y)
             {
@@ -636,22 +651,22 @@ namespace Day15
             if (tie)
             {
                 // Reading Order
-                if (GenerateDistanceMap(fromX + 0, fromY - 1))
+                if (GenerateDistanceMap(enemy, fromX + 0, fromY - 1))
                 {
                     FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
                 }
-                if (GenerateDistanceMap(fromX - 1, fromY + 0))
+                if (GenerateDistanceMap(enemy, fromX - 1, fromY + 0))
                 {
                     FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
                 }
                 {
                     FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
                 }
-                if (GenerateDistanceMap(fromX + 1, fromY + 0))
+                if (GenerateDistanceMap(enemy, fromX + 1, fromY + 0))
                 {
                     FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
                 }
-                if (GenerateDistanceMap(fromX + 0, fromY + 1))
+                if (GenerateDistanceMap(enemy, fromX + 0, fromY + 1))
                 {
                     FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
                 }
@@ -670,17 +685,33 @@ namespace Day15
                 _ => throw new InvalidProgramException($"Invalid from location '{sMap[fromX, fromY]}'")
             };
 
-            var closestDistance = MAX_MAP_SIZE * MAX_MAP_SIZE * 2;
+            var closestDistance = int.MaxValue;
             int closestTargetX = int.MaxValue;
             int closestTargetY = int.MaxValue;
             int moveX;
             int moveY;
-            (int, int) bestMove = (-1, -1);
+            (int, int) bestMove = (fromX, fromY);
 
+            if (sMap[fromX + 0, fromY - 1] == enemy)
+            {
+                return (fromX, fromY);
+            }
+            if (sMap[fromX - 1, fromY + 0] == enemy)
+            {
+                return (fromX, fromY);
+            }
+            if (sMap[fromX + 1, fromY + 0] == enemy)
+            {
+                return (fromX, fromY);
+            }
+            if (sMap[fromX + 0, fromY + 1] == enemy)
+            {
+                return (fromX, fromY);
+            }
             // Reading Order
             moveX = fromX + 0;
             moveY = fromY - 1;
-            if (GenerateDistanceMap(moveX, moveY))
+            if (GenerateDistanceMap(enemy, moveX, moveY))
             {
                 if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
                 {
@@ -690,7 +721,7 @@ namespace Day15
 
             moveX = fromX - 1;
             moveY = fromY + 0;
-            if (GenerateDistanceMap(moveX, moveY))
+            if (GenerateDistanceMap(enemy, moveX, moveY))
             {
                 if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
                 {
@@ -700,7 +731,7 @@ namespace Day15
 
             moveX = fromX + 1;
             moveY = fromY + 0;
-            if (GenerateDistanceMap(moveX, moveY))
+            if (GenerateDistanceMap(enemy, moveX, moveY))
             {
                 if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
                 {
@@ -710,13 +741,14 @@ namespace Day15
 
             moveX = fromX + 0;
             moveY = fromY + 1;
-            if (GenerateDistanceMap(moveX, moveY))
+            if (GenerateDistanceMap(enemy, moveX, moveY))
             {
                 if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
                 {
                     bestMove = (moveX, moveY);
                 }
             }
+
             return bestMove;
         }
 
@@ -739,6 +771,61 @@ namespace Day15
                 }
             }
             throw new InvalidProgramException($"Did not find object to move at {turn}");
+        }
+
+        private static void SimulateRound()
+        {
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    sMoved[x, y] = false;
+                }
+            }
+
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    var cell = sMap[x, y];
+                    if ((cell == 'E') || (cell == 'G'))
+                    {
+                        if (sMoved[x, y])
+                        {
+                            continue;
+                        }
+                        var newPosition = MoveTowardsTarget(x, y);
+                        sMap[x, y] = '.';
+                        sMap[newPosition.x, newPosition.y] = cell;
+                        sMoved[newPosition.x, newPosition.y] = true;
+                        GetMap();
+                    }
+                }
+            }
+        }
+
+        public static void Simulate(int rounds)
+        {
+            for (var r = 0; r < rounds; ++r)
+            {
+                SimulateRound();
+            }
+        }
+
+        public static string[] GetMap()
+        {
+            var output = new string[sHeight];
+            for (var y = 0; y < sHeight; ++y)
+            {
+                var line = "";
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    line += sMap[x, y];
+                }
+                output[y] = line;
+                Console.WriteLine(line);
+            }
+            return output;
         }
 
         public static void Run()

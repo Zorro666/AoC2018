@@ -76,7 +76,7 @@ namespace Day15
 "#E..G.#",
 "#...#.#",
 "#.G.#G#",
-"#######",
+"#######"
                 }, 1, 1, 4, 1, TestName = "ClosestTarget (4,1)")]
         public void ClosestTarget(string[] map, int fromX, int fromY, int expectedX, int expectedY)
         {
@@ -92,7 +92,7 @@ namespace Day15
 "#E..G.#",
 "#...#.#",
 "#.G.#G#",
-"#######",
+"#######"
                 }, 1, 1, 2, 1, TestName = "MoveTowardsTarget (2,1)")]
         [TestCase(
             new string[] {
@@ -100,14 +100,137 @@ namespace Day15
 "#.E...#",
 "#.....#",
 "#...G.#",
-"#######",
+"#######"
                 }, 2, 1, 3, 1, TestName = "MoveTowardsTarget (3,1)")]
+        [TestCase(
+            new string[] {
+"#########",
+"#.G...G.#",
+"#...G...#",
+"#.......#",
+"#.G.E..G#",
+"#.......#",
+"#.......#",
+"#G..G..G#",
+"#########"
+                }, 4, 4, 4, 3, TestName = "MoveTowardsTarget (4,3)")]
+        [TestCase(
+            new string[] {
+"#########",
+"#..G.G..#",
+"#...G...#",
+"#.G.E.G.#",
+"#.......#",
+"#G..G..G#",
+"#.......#",
+"#.......#",
+"#########"
+                }, 4, 3, 4, 3, TestName = "MoveTowardsTarget Adjacent")]
         public void MoveTowardsTarget(string[] map, int fromX, int fromY, int expectedX, int expectedY)
         {
             Program.Parse(map);
             (var x, var y) = Program.MoveTowardsTarget(fromX, fromY);
             Assert.That(x, Is.EqualTo(expectedX));
             Assert.That(y, Is.EqualTo(expectedY));
+        }
+
+        [TestCase(
+            new string[] {
+"#########",
+"#G..G..G#",
+"#.......#",
+"#.......#",
+"#G..E..G#",
+"#.......#",
+"#.......#",
+"#G..G..G#",
+"#########"
+                }, 0,
+            new string[] {
+"#########",
+"#G..G..G#",
+"#.......#",
+"#.......#",
+"#G..E..G#",
+"#.......#",
+"#.......#",
+"#G..G..G#",
+"#########"
+                }, TestName = "SimulateRound 0")]
+        [TestCase(
+            new string[] {
+"#########",
+"#G..G..G#",
+"#.......#",
+"#.......#",
+"#G..E..G#",
+"#.......#",
+"#.......#",
+"#G..G..G#",
+"#########"
+                }, 1,
+            new string[] {
+"#########",
+"#.G...G.#",
+"#...G...#",
+"#...E..G#",
+"#.G.....#",
+"#.......#",
+"#G..G..G#",
+"#.......#",
+"#########"
+                }, TestName = "SimulateRound 1")]
+        [TestCase(
+            new string[] {
+"#########",
+"#G..G..G#",
+"#.......#",
+"#.......#",
+"#G..E..G#",
+"#.......#",
+"#.......#",
+"#G..G..G#",
+"#########"
+                }, 2,
+            new string[] {
+"#########",
+"#..G.G..#",
+"#...G...#",
+"#.G.E.G.#",
+"#.......#",
+"#G..G..G#",
+"#.......#",
+"#.......#",
+"#########"
+                }, TestName = "SimulateRound 2")]
+        [TestCase(
+            new string[] {
+"#########",
+"#G..G..G#",
+"#.......#",
+"#.......#",
+"#G..E..G#",
+"#.......#",
+"#.......#",
+"#G..G..G#",
+"#########"
+                }, 3,
+            new string[] {
+"#########",
+"#.......#",
+"#..GGG..#",
+"#..GEG..#",
+"#G..G...#",
+"#......G#",
+"#.......#",
+"#.......#",
+"#########"
+                }, TestName = "SimulateRound 3")]
+        public void SimulateRound(string[] map, int rounds, string[] expected)
+        {
+            Program.Parse(map);
+            Program.Simulate(rounds);
+            Assert.That(Program.GetMap(), Is.EqualTo(expected));
         }
     }
 }
