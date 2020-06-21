@@ -318,10 +318,10 @@ namespace Day15
 {
     class Program
     {
-        const int MAX_MAP_SIZE = 128;
-        const int MAX_NUM_CHARACTERS = 128;
+        const int MAX_MAP_SIZE = 32;
         readonly static char[,] sMap = new char[MAX_MAP_SIZE, MAX_MAP_SIZE];
-        readonly static bool[,] sMoved = new bool[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        readonly static int[,] sHP = new int[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        readonly static bool[,] sProcessed = new bool[MAX_MAP_SIZE, MAX_MAP_SIZE];
         readonly static int[,] sDistances = new int[MAX_MAP_SIZE, MAX_MAP_SIZE];
         static int sWidth;
         static int sHeight;
@@ -333,9 +333,9 @@ namespace Day15
 
             if (part1)
             {
-                long result1 = -666;
+                var result1 = BattleResult();
                 Console.WriteLine($"Day15 : Result1 {result1}");
-                long expected = 280;
+                var expected = 244860 + 1;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -343,9 +343,9 @@ namespace Day15
             }
             else
             {
-                long result2 = -123;
+                var result2 = -123;
                 Console.WriteLine($"Day15 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -372,6 +372,10 @@ namespace Day15
                 for (var x = 0; x < sWidth; ++x)
                 {
                     sMap[x, y] = line[x];
+                    if ((sMap[x, y] == 'E') || (sMap[x, y] == 'G'))
+                    {
+                        sHP[x, y] = 200;
+                    }
                 }
             }
         }
@@ -773,13 +777,13 @@ namespace Day15
             throw new InvalidProgramException($"Did not find object to move at {turn}");
         }
 
-        private static void SimulateRound()
+        private static bool SimulateRound()
         {
             for (var y = 0; y < sHeight; ++y)
             {
                 for (var x = 0; x < sWidth; ++x)
                 {
-                    sMoved[x, y] = false;
+                    sProcessed[x, y] = false;
                 }
             }
 
@@ -790,18 +794,143 @@ namespace Day15
                     var cell = sMap[x, y];
                     if ((cell == 'E') || (cell == 'G'))
                     {
-                        if (sMoved[x, y])
+                        if (sProcessed[x, y])
                         {
                             continue;
                         }
-                        var newPosition = MoveTowardsTarget(x, y);
-                        sMap[x, y] = '.';
-                        sMap[newPosition.x, newPosition.y] = cell;
-                        sMoved[newPosition.x, newPosition.y] = true;
-                        GetMap();
+                        var enemy = (cell == 'E') ? 'G' : 'E';
+                        var enemyCount = EnemyCount(enemy);
+                        if (enemyCount == 0)
+                        {
+                            return false;
+                        }
+                        bool attacked = ResolveCombat(x, y);
+                        if (!attacked)
+                        {
+                            var newPosition = MoveTowardsTarget(x, y);
+                            var hp = sHP[x, y];
+                            sMap[x, y] = '.';
+                            sHP[x, y] = 0;
+                            sMap[newPosition.x, newPosition.y] = cell;
+                            sHP[newPosition.x, newPosition.y] = hp;
+                            sProcessed[newPosition.x, newPosition.y] = true;
+                            attacked = ResolveCombat(newPosition.x, newPosition.y);
+                        }
                     }
                 }
             }
+            return true;
+        }
+
+        private static int EnemyCount(char enemy)
+        {
+            var count = 0;
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    if (sMap[x, y] == enemy)
+                    {
+                        ++count;
+                    }
+                }
+            }
+            return count;
+        }
+
+        private static (int elves, int goblins) CountHPs()
+        {
+            var elvesHP = 0;
+            var goblinsHP = 0;
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    if (sMap[x, y] == 'E')
+                    {
+                        elvesHP += sHP[x, y];
+                    }
+                    else if (sMap[x, y] == 'G')
+                    {
+                        goblinsHP += sHP[x, y];
+                    }
+                }
+            }
+            return (elvesHP, goblinsHP);
+        }
+
+        private static bool ResolveCombat(int x, int y)
+        {
+            var cell = sMap[x, y];
+            var enemy = (cell == 'E') ? 'G' : 'E';
+            var minHP = int.MaxValue;
+            int minEnemyX = int.MaxValue;
+            int minEnemyY = int.MaxValue;
+            int enemyX;
+            int enemyY;
+
+            enemyX = x + 0;
+            enemyY = y - 1;
+            if (sMap[enemyX, enemyY] == enemy)
+            {
+                var enemyHP = sHP[enemyX, enemyY];
+                if (enemyHP < minHP)
+                {
+                    minHP = enemyHP;
+                    minEnemyX = enemyX;
+                    minEnemyY = enemyY;
+                }
+            }
+
+            enemyX = x - 1;
+            enemyY = y + 0;
+            if (sMap[enemyX, enemyY] == enemy)
+            {
+                var enemyHP = sHP[enemyX, enemyY];
+                if (enemyHP < minHP)
+                {
+                    minHP = enemyHP;
+                    minEnemyX = enemyX;
+                    minEnemyY = enemyY;
+                }
+            }
+
+            enemyX = x + 1;
+            enemyY = y + 0;
+            if (sMap[enemyX, enemyY] == enemy)
+            {
+                var enemyHP = sHP[enemyX, enemyY];
+                if (enemyHP < minHP)
+                {
+                    minHP = enemyHP;
+                    minEnemyX = enemyX;
+                    minEnemyY = enemyY;
+                }
+            }
+
+            enemyX = x + 0;
+            enemyY = y + 1;
+            if (sMap[enemyX, enemyY] == enemy)
+            {
+                var enemyHP = sHP[enemyX, enemyY];
+                if (enemyHP < minHP)
+                {
+                    minHP = enemyHP;
+                    minEnemyX = enemyX;
+                    minEnemyY = enemyY;
+                }
+            }
+            if (minHP != int.MaxValue)
+            {
+                sHP[minEnemyX, minEnemyY] -= 3;
+                if (sHP[minEnemyX, minEnemyY] <= 0)
+                {
+                    sHP[minEnemyX, minEnemyY] = 0;
+                    sMap[minEnemyX, minEnemyY] = '.';
+                }
+                return true;
+            }
+            return false;
         }
 
         public static void Simulate(int rounds)
@@ -810,6 +939,25 @@ namespace Day15
             {
                 SimulateRound();
             }
+        }
+
+        public static int BattleResult()
+        {
+            const int MAX_NUM_ROUNDS = 1024;
+            for (var r = 0; r < MAX_NUM_ROUNDS; ++r)
+            {
+                if (SimulateRound() == false)
+                {
+                    var (elvesHP, goblinsHP) = CountHPs();
+                    return r * (elvesHP + goblinsHP);
+                }
+            }
+            throw new InvalidProgramException($"Batte not resolved after {MAX_NUM_ROUNDS} rounds");
+        }
+
+        public static int GetHP(int x, int y)
+        {
+            return sHP[x, y];
         }
 
         public static string[] GetMap()
@@ -823,7 +971,6 @@ namespace Day15
                     line += sMap[x, y];
                 }
                 output[y] = line;
-                Console.WriteLine(line);
             }
             return output;
         }

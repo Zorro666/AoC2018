@@ -156,7 +156,7 @@ namespace Day15
 "#.......#",
 "#G..G..G#",
 "#########"
-                }, TestName = "SimulateRound 0")]
+                }, TestName = "Simulate Move 0")]
         [TestCase(
             new string[] {
 "#########",
@@ -179,7 +179,7 @@ namespace Day15
 "#G..G..G#",
 "#.......#",
 "#########"
-                }, TestName = "SimulateRound 1")]
+                }, TestName = "Simulate Move 1")]
         [TestCase(
             new string[] {
 "#########",
@@ -202,7 +202,7 @@ namespace Day15
 "#.......#",
 "#.......#",
 "#########"
-                }, TestName = "SimulateRound 2")]
+                }, TestName = "Simulate Move 2")]
         [TestCase(
             new string[] {
 "#########",
@@ -225,12 +225,270 @@ namespace Day15
 "#.......#",
 "#.......#",
 "#########"
-                }, TestName = "SimulateRound 3")]
-        public void SimulateRound(string[] map, int rounds, string[] expected)
+                }, TestName = "Simulate Move 3")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 1,
+            new string[] {
+"#######",
+"#..G..#",
+"#...EG#",
+"#.#G#G#",
+"#...#E#",
+"#.....#",
+"#######"
+            }, TestName = "Simulate 1")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 2,
+            new string[] {
+"#######",
+"#...G.#",
+"#..GEG#",
+"#.#.#G#",
+"#...#E#",
+"#.....#",
+"#######"
+            }, TestName = "Simulate 2")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 23,
+            new string[] {
+"#######",
+"#...G.#",
+"#..G.G#",
+"#.#.#G#",
+"#...#E#",
+"#.....#",
+"#######"
+            }, TestName = "Simulate 23")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 24,
+            new string[] {
+"#######",
+"#..G..#",
+"#...G.#",
+"#.#G#G#",
+"#...#E#",
+"#.....#",
+"#######"
+            }, TestName = "Simulate 24")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 25,
+            new string[] {
+"#######",
+"#.G...#",
+"#..G..#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+            }, TestName = "Simulate 25")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 26,
+            new string[] {
+"#######",
+"#G....#",
+"#.G...#",
+"#.#.#G#",
+"#...#E#",
+"#..G..#",
+"#######"
+            }, TestName = "Simulate 26")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 27,
+            new string[] {
+"#######",
+"#G....#",
+"#.G...#",
+"#.#.#G#",
+"#...#E#",
+"#...G.#",
+"#######"
+            }, TestName = "Simulate 27")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 28,
+            new string[] {
+"#######",
+"#G....#",
+"#.G...#",
+"#.#.#G#",
+"#...#E#",
+"#....G#",
+"#######"
+            }, TestName = "Simulate 28")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 47,
+            new string[] {
+"#######",
+"#G....#",
+"#.G...#",
+"#.#.#G#",
+"#...#.#",
+"#....G#",
+"#######",
+            }, TestName = "Simulate 47")]
+        public void Simulate(string[] map, int rounds, string[] expected)
         {
             Program.Parse(map);
             Program.Simulate(rounds);
             Assert.That(Program.GetMap(), Is.EqualTo(expected));
+        }
+
+        [TestCase(
+            new string[] {
+"#########",
+"#.......#",
+"#..GGG..#",
+"#..GEG..#",
+"#G..G...#",
+"#......G#",
+"#.......#",
+"#.......#",
+"#########"
+                }, 4, 2, 197, TestName = "ResolveCombat 3")]
+        public void ResolveCombat(string[] map, int x, int y, int expected)
+        {
+            Program.Parse(map);
+            Program.Simulate(1);
+            Assert.That(Program.GetHP(x, y), Is.EqualTo(expected));
+        }
+
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 47 * 590, TestName = "BattleResult A")]
+        [TestCase(
+            new string[] {
+"#######",
+"#G..#E#",
+"#E#E.E#",
+"#G.##.#",
+"#...#E#",
+"#...E.#",
+"#######",
+                }, 37 * 982, TestName = "BattleResult B")]
+        [TestCase(
+            new string[] {
+"#######",
+"#E..EG#",
+"#.#G.E#",
+"#E.##E#",
+"#G..#.#",
+"#..E#.#",
+"#######"
+                }, 46 * 859, TestName = "BattleResult C")]
+        [TestCase(
+            new string[] {
+"#######",
+"#E.G#.#",
+"#.#G..#",
+"#G.#.G#",
+"#G..#.#",
+"#...E.#",
+"#######"
+                }, 35 * 793, TestName = "BattleResult D")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.E...#",
+"#.#..G#",
+"#.###.#",
+"#E#G#G#",
+"#...#G#",
+"#######"
+                }, 54 * 536, TestName = "BattleResult E")]
+        [TestCase(
+            new string[] {
+"#########",
+"#G......#",
+"#.E.#...#",
+"#..##..G#",
+"#...##..#",
+"#...#...#",
+"#.G...G.#",
+"#.....G.#",
+"#########"
+                }, 20 * 937, TestName = "BattleResult F")]
+        public void BattleResult(string[] map, int expected)
+        {
+            Program.Parse(map);
+            Assert.That(Program.BattleResult(), Is.EqualTo(expected));
         }
     }
 }
