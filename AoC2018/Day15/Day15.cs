@@ -335,7 +335,11 @@ namespace Day15
             {
                 var result1 = BattleResult();
                 Console.WriteLine($"Day15 : Result1 {result1}");
-                var expected = 244860 + 1;
+                var expected = 244860;
+                // TOO LOW - 244860
+                // WRONG - 274860
+                // WRONG - 294860
+                // TOO HIGH - 344860
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -409,44 +413,6 @@ namespace Day15
 
             newSteps = steps;
             Visit(x + 0, y + 1, endX, endY, ref newSteps);
-        }
-
-        private static int Distance(int fromX, int fromY, int toX, int toY)
-        {
-            if (sMap[toX, toY] != '.')
-            {
-                return int.MaxValue;
-            }
-            var oldCell = sMap[fromX, fromY];
-            if ((oldCell != 'E') && (oldCell != 'G'))
-            {
-                return int.MaxValue;
-            }
-            int steps;
-            for (var y = 0; y < sHeight; ++y)
-            {
-                for (var x = 0; x < sWidth; ++x)
-                {
-                    sDistances[x, y] = int.MaxValue;
-                }
-            }
-            sMap[fromX, fromY] = '.';
-
-            // Reading order
-            steps = 0;
-            Visit(fromX + 0, fromY - 1, toX, toY, ref steps);
-
-            steps = 0;
-            Visit(fromX - 1, fromY + 0, toX, toY, ref steps);
-
-            steps = 0;
-            Visit(fromX + 1, fromY + 0, toX, toY, ref steps);
-
-            steps = 0;
-            Visit(fromX + 0, fromY + 1, toX, toY, ref steps);
-
-            sMap[fromX, fromY] = oldCell;
-            return sDistances[toX, toY];
         }
 
         private static bool GenerateDistanceMap(char enemy, int fromX, int fromY)
@@ -555,128 +521,76 @@ namespace Day15
                 'E' => 'G',
                 'G' => 'E',
                 _ => throw new InvalidProgramException($"Invalid from location '{sMap[fromX, fromY]}'")
-
             };
-            bool tie = false;
+
+            (int, int) bestMove = (fromX, fromY);
+
+            // Next to an enemy do not move
+            if (sMap[fromX + 0, fromY - 1] == enemy)
+            {
+                return (fromX + 0, fromY - 1);
+            }
+            if (sMap[fromX - 1, fromY + 0] == enemy)
+            {
+                return (fromX - 1, fromY + 0);
+            }
+            if (sMap[fromX + 1, fromY + 0] == enemy)
+            {
+                return (fromX + 1, fromY + 0);
+            }
+            if (sMap[fromX + 0, fromY + 1] == enemy)
+            {
+                return (fromX + 0, fromY + 1);
+            }
 
             var closestDistance = int.MaxValue;
-            (int x, int y) closestTarget = (-1, -1);
-            for (var y = 0; y < sHeight; ++y)
+            int closestTargetX = int.MaxValue;
+            int closestTargetY = int.MaxValue;
+            int moveX;
+            int moveY;
+
+            // Reading Order
+            moveX = fromX + 0;
+            moveY = fromY - 1;
+            if (GenerateDistanceMap(enemy, moveX, moveY))
             {
-                for (var x = 0; x < sWidth; ++x)
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
                 {
-                    var cell = sMap[x, y];
-                    if (cell == enemy)
-                    {
-                        int distance;
-                        bool closer;
-
-                        // Reading order
-                        distance = Distance(fromX, fromY, x + 0, y - 1);
-                        closer = false;
-                        if (distance < closestDistance)
-                        {
-                            closer = true;
-                            tie = false;
-                        }
-                        if (distance == closestDistance)
-                        {
-                            tie = true;
-                            closer = true;
-                        }
-                        if (closer)
-                        {
-                            closestDistance = distance;
-                            closestTarget = (x, y);
-                        }
-
-                        distance = Distance(fromX, fromY, x - 1, y + 0);
-                        closer = false;
-                        if (distance < closestDistance)
-                        {
-                            closer = true;
-                            tie = false;
-                        }
-                        if (distance == closestDistance)
-                        {
-                            tie = true;
-                            closer = true;
-                        }
-                        if (closer)
-                        {
-                            closestDistance = distance;
-                            closestTarget = (x, y);
-                        }
-
-                        distance = Distance(fromX, fromY, x + 1, y + 0);
-                        closer = false;
-                        if (distance < closestDistance)
-                        {
-                            closer = true;
-                            tie = false;
-                        }
-                        if (distance == closestDistance)
-                        {
-                            tie = true;
-                            closer = true;
-                        }
-                        if (closer)
-                        {
-                            closestDistance = distance;
-                            closestTarget = (x, y);
-                        }
-
-                        distance = Distance(fromX, fromY, x + 0, y + 1);
-                        closer = false;
-                        if (distance < closestDistance)
-                        {
-                            closer = true;
-                            tie = false;
-                        }
-                        if (distance == closestDistance)
-                        {
-                            tie = true;
-                            closer = true;
-                        }
-                        if (closer)
-                        {
-                            closestDistance = distance;
-                            closestTarget = (x, y);
-                        }
-                    }
+                    bestMove = (moveX, moveY);
                 }
             }
 
-            if (closestDistance == int.MaxValue)
+            moveX = fromX - 1;
+            moveY = fromY + 0;
+            if (GenerateDistanceMap(enemy, moveX, moveY))
             {
-                throw new InvalidProgramException($"No target found");
-            }
-
-            if (tie)
-            {
-                // Reading Order
-                if (GenerateDistanceMap(enemy, fromX + 0, fromY - 1))
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
                 {
-                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
-                }
-                if (GenerateDistanceMap(enemy, fromX - 1, fromY + 0))
-                {
-                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
-                }
-                {
-                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
-                }
-                if (GenerateDistanceMap(enemy, fromX + 1, fromY + 0))
-                {
-                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
-                }
-                if (GenerateDistanceMap(enemy, fromX + 0, fromY + 1))
-                {
-                    FindClosestTarget(enemy, ref closestTarget.x, ref closestTarget.y, ref closestDistance);
+                    bestMove = (closestTargetX, closestTargetY);
                 }
             }
 
-            return closestTarget;
+            moveX = fromX + 1;
+            moveY = fromY + 0;
+            if (GenerateDistanceMap(enemy, moveX, moveY))
+            {
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
+                {
+                    bestMove = (closestTargetX, closestTargetY);
+                }
+            }
+
+            moveX = fromX + 0;
+            moveY = fromY + 1;
+            if (GenerateDistanceMap(enemy, moveX, moveY))
+            {
+                if (FindClosestTarget(enemy, ref closestTargetX, ref closestTargetY, ref closestDistance))
+                {
+                    bestMove = (closestTargetX, closestTargetY);
+                }
+            }
+
+            return bestMove;
         }
 
         public static (int x, int y) MoveTowardsTarget(int fromX, int fromY)
@@ -689,29 +603,32 @@ namespace Day15
                 _ => throw new InvalidProgramException($"Invalid from location '{sMap[fromX, fromY]}'")
             };
 
+            (int, int) bestMove = (fromX, fromY);
+
+            // Next to an enemy do not move
+            if (sMap[fromX + 0, fromY - 1] == enemy)
+            {
+                return bestMove;
+            }
+            if (sMap[fromX - 1, fromY + 0] == enemy)
+            {
+                return bestMove;
+            }
+            if (sMap[fromX + 1, fromY + 0] == enemy)
+            {
+                return bestMove;
+            }
+            if (sMap[fromX + 0, fromY + 1] == enemy)
+            {
+                return bestMove;
+            }
+
             var closestDistance = int.MaxValue;
             int closestTargetX = int.MaxValue;
             int closestTargetY = int.MaxValue;
             int moveX;
             int moveY;
-            (int, int) bestMove = (fromX, fromY);
 
-            if (sMap[fromX + 0, fromY - 1] == enemy)
-            {
-                return (fromX, fromY);
-            }
-            if (sMap[fromX - 1, fromY + 0] == enemy)
-            {
-                return (fromX, fromY);
-            }
-            if (sMap[fromX + 1, fromY + 0] == enemy)
-            {
-                return (fromX, fromY);
-            }
-            if (sMap[fromX + 0, fromY + 1] == enemy)
-            {
-                return (fromX, fromY);
-            }
             // Reading Order
             moveX = fromX + 0;
             moveY = fromY - 1;
@@ -787,6 +704,8 @@ namespace Day15
                 }
             }
 
+            // Combat proceeds in rounds; in each round, each unit that is still alive takes a turn, resolving all of its actions before the next unit's turn begins.
+            // On each unit's turn, it tries to move into range of an enemy (if it isn't already) and then attack (if it is in range).
             for (var y = 0; y < sHeight; ++y)
             {
                 for (var x = 0; x < sWidth; ++x)
@@ -804,18 +723,14 @@ namespace Day15
                         {
                             return false;
                         }
-                        bool attacked = ResolveCombat(x, y);
-                        if (!attacked)
-                        {
-                            var newPosition = MoveTowardsTarget(x, y);
-                            var hp = sHP[x, y];
-                            sMap[x, y] = '.';
-                            sHP[x, y] = 0;
-                            sMap[newPosition.x, newPosition.y] = cell;
-                            sHP[newPosition.x, newPosition.y] = hp;
-                            sProcessed[newPosition.x, newPosition.y] = true;
-                            attacked = ResolveCombat(newPosition.x, newPosition.y);
-                        }
+                        var newPosition = MoveTowardsTarget(x, y);
+                        var hp = sHP[x, y];
+                        sMap[x, y] = '.';
+                        sHP[x, y] = 0;
+                        sMap[newPosition.x, newPosition.y] = cell;
+                        sHP[newPosition.x, newPosition.y] = hp;
+                        sProcessed[newPosition.x, newPosition.y] = true;
+                        ResolveCombat(newPosition.x, newPosition.y);
                     }
                 }
             }
@@ -859,7 +774,7 @@ namespace Day15
             return (elvesHP, goblinsHP);
         }
 
-        private static bool ResolveCombat(int x, int y)
+        private static void ResolveCombat(int x, int y)
         {
             var cell = sMap[x, y];
             var enemy = (cell == 'E') ? 'G' : 'E';
@@ -928,9 +843,7 @@ namespace Day15
                     sHP[minEnemyX, minEnemyY] = 0;
                     sMap[minEnemyX, minEnemyY] = '.';
                 }
-                return true;
             }
-            return false;
         }
 
         public static void Simulate(int rounds)
@@ -979,7 +892,7 @@ namespace Day15
         {
             Console.WriteLine("Day15 : Start");
             _ = new Program("Day15/input.txt", true);
-            _ = new Program("Day15/input.txt", false);
+            //_ = new Program("Day15/input.txt", false);
             Console.WriteLine("Day15 : End");
         }
     }
