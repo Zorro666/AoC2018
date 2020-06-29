@@ -73,11 +73,13 @@ namespace Day16
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            Parse(lines);
+
             if (part1)
             {
-                long result1 = -666;
+                var result1 = CountThreeOrMoreOpcodes();
                 Console.WriteLine($"Day16 : Result1 {result1}");
-                long expected = 280;
+                var expected = 280;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -85,9 +87,9 @@ namespace Day16
             }
             else
             {
-                long result2 = -123;
+                var result2 = -123;
                 Console.WriteLine($"Day16 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -101,6 +103,22 @@ namespace Day16
             _ = new Program("Day16/input.txt", true);
             _ = new Program("Day16/input.txt", false);
             Console.WriteLine("Day16 : End");
+        }
+
+        public static void Parse(string[] lines)
+        {
+            // 'Before:[1, 1, 3, 2]'
+            // '13 1 2 3'
+            // 'After:[1, 1, 3, 0]'
+            // ''
+            // ''
+            // ''
+            // '14 3 3 2'
+        }
+
+        public static int CountThreeOrMoreOpcodes()
+        {
+            return int.MinValue;
         }
     }
 }
