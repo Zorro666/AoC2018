@@ -106,6 +106,26 @@ namespace Day16
     {
         const int MAX_NUM_SAMPLES = 1024;
         const int MAX_NUM_REGISTERS = 4;
+        enum Instruction
+        {
+            addr = 0,
+            addi = 1,
+            mulr = 2,
+            muli = 3,
+            banr = 4,
+            bani = 5,
+            borr = 6,
+            bori = 7,
+            setr = 8,
+            seti = 9,
+            gtir = 10,
+            gtri = 11,
+            gtrr = 12,
+            eqir = 13,
+            eqri = 14,
+            eqrr = 15
+        };
+
         readonly private static int[,] sBeforeRegisters = new int[MAX_NUM_SAMPLES, MAX_NUM_REGISTERS];
         readonly private static int[,] sAfterRegisters = new int[MAX_NUM_SAMPLES, MAX_NUM_REGISTERS];
         readonly private static int[] sOpcodes = new int[MAX_NUM_SAMPLES];
@@ -270,146 +290,146 @@ namespace Day16
             }
         }
 
-        private static void addr(int A, int B, int C)
+        private static int Instruction_addr(int A, int B, int C)
         {
             // addr(add register) stores into register C the result of adding register A and register B.
             var valueA = sRegisters[A];
             var valueB = sRegisters[B];
             var output = valueA + valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void addi(int A, int B, int C)
+        private static int Instruction_addi(int A, int B, int C)
         {
             // addi(add immediate) stores into register C the result of adding register A and value B.
             var valueA = sRegisters[A];
             var valueB = B;
             var output = valueA + valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void mulr(int A, int B, int C)
+        private static int Instruction_mulr(int A, int B, int C)
         {
             // mulr(multiply register) stores into register C the result of multiplying register A and register B.
             var valueA = sRegisters[A];
             var valueB = sRegisters[B];
             var output = valueA * valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void muli(int A, int B, int C)
+        private static int Instruction_muli(int A, int B, int C)
         {
             // muli(multiply immediate) stores into register C the result of multiplying register A and value B.
             var valueA = sRegisters[A];
             var valueB = B;
             var output = valueA * valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void banr(int A, int B, int C)
+        private static int Instruction_banr(int A, int B, int C)
         {
             // banr(bitwise AND register) stores into register C the result of the bitwise AND of register A and register B.
             var valueA = sRegisters[A];
             var valueB = sRegisters[B];
             var output = valueA & valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void bani(int A, int B, int C)
+        private static int Instruction_bani(int A, int B, int C)
         {
             // bani(bitwise AND immediate) stores into register C the result of the bitwise AND of register A and value B.
             var valueA = sRegisters[A];
             var valueB = B;
             var output = valueA & valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void borr(int A, int B, int C)
+        private static int Instruction_borr(int A, int B, int C)
         {
             // borr (bitwise OR register) stores into register C the result of the bitwise OR of register A and register B.
             var valueA = sRegisters[A];
             var valueB = sRegisters[B];
             var output = valueA | valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void bori(int A, int B, int C)
+        private static int Instruction_bori(int A, int B, int C)
         {
             // bori (bitwise OR immediate) stores into register C the result of the bitwise OR of register A and value B.
             var valueA = sRegisters[A];
             var valueB = B;
             var output = valueA | valueB;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void setr(int A, int _, int C)
+        private static int Instruction_setr(int A, int _, int C)
         {
             // setr (set register) copies the contents of register A into register C. (Input B is ignored.)
             var valueA = sRegisters[A];
             var output = valueA;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void seti(int A, int _, int C)
+        private static int Instruction_seti(int A, int _, int C)
         {
             // seti(set immediate) stores value A into register C. (Input B is ignored.)
             var valueA = A;
             var output = valueA;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void gtir(int A, int B, int C)
+        private static int Instruction_gtir(int A, int B, int C)
         {
             // gtir(greater-than immediate/register) sets register C to 1 if value A is greater than register B. Otherwise, register C is set to 0.
             var valueA = A;
             var valueB = sRegisters[B];
             var output = valueA > valueB ? 1 : 0;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void gtri(int A, int B, int C)
+        private static int Instruction_gtri(int A, int B, int C)
         {
             // gtri (greater-than register/immediate) sets register C to 1 if register A is greater than value B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
             var valueB = B;
             var output = valueA > valueB ? 1 : 0;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void gtrr(int A, int B, int C)
+        private static int Instruction_gtrr(int A, int B, int C)
         {
             // gtrr (greater-than register/register) sets register C to 1 if register A is greater than register B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
             var valueB = sRegisters[B];
             var output = valueA > valueB ? 1 : 0;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void eqir(int A, int B, int C)
+        private static int Instruction_eqir(int A, int B, int C)
         {
             // eqir (equal immediate/register) sets register C to 1 if value A is equal to register B. Otherwise, register C is set to 0.
             var valueA = A;
             var valueB = sRegisters[B];
             var output = valueA == valueB ? 1 : 0;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void eqri(int A, int B, int C)
+        private static int Instruction_eqri(int A, int B, int C)
         {
             // eqri (equal register/immediate) sets register C to 1 if register A is equal to value B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
             var valueB = B;
             var output = valueA == valueB ? 1 : 0;
-            sRegisters[C] = output;
+            return output;
         }
 
-        private static void eqrr(int A, int B, int C)
+        private static int Instruction_eqrr(int A, int B, int C)
         {
             // eqrr (equal register/register) sets register C to 1 if register A is equal to register B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
             var valueB = sRegisters[B];
             var output = valueA == valueB ? 1 : 0;
-            sRegisters[C] = output;
+            return output;
         }
 
         private static void PrepareRegisters(int s)
@@ -432,74 +452,57 @@ namespace Day16
             return true;
         }
 
+        private static bool TestInstruction(int s, Instruction instruction)
+        {
+            var A = sInputAs[s];
+            var B = sInputBs[s];
+            var C = sOutputRegs[s];
+
+            PrepareRegisters(s);
+            sRegisters[C] = instruction switch
+            {
+                Instruction.addr => Instruction_addr(A, B, C),
+                Instruction.addi => Instruction_addi(A, B, C),
+                Instruction.mulr => Instruction_mulr(A, B, C),
+                Instruction.muli => Instruction_muli(A, B, C),
+                Instruction.banr => Instruction_banr(A, B, C),
+                Instruction.bani => Instruction_bani(A, B, C),
+                Instruction.borr => Instruction_borr(A, B, C),
+                Instruction.bori => Instruction_bori(A, B, C),
+                Instruction.setr => Instruction_setr(A, B, C),
+                Instruction.seti => Instruction_seti(A, B, C),
+                Instruction.gtir => Instruction_gtir(A, B, C),
+                Instruction.gtri => Instruction_gtri(A, B, C),
+                Instruction.gtrr => Instruction_gtrr(A, B, C),
+                Instruction.eqir => Instruction_eqir(A, B, C),
+                Instruction.eqri => Instruction_eqri(A, B, C),
+                Instruction.eqrr => Instruction_eqrr(A, B, C),
+                _ => throw new NotImplementedException()
+            };
+
+            return TestRegisters(s);
+        }
+
         private static int TestSample(int s)
         {
             var count = 0;
 
-            PrepareRegisters(s);
-            addr(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            addi(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            mulr(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            muli(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            banr(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            bani(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            borr(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            bori(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            setr(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            seti(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            gtir(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            gtri(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            gtrr(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            eqir(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            eqri(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
-            PrepareRegisters(s);
-            eqrr(sInputAs[s], sInputBs[s], sOutputRegs[s]);
-            count += TestRegisters(s) ? 1 : 0;
-
+            count += TestInstruction(s, Instruction.addr) ? 1 : 0;
+            count += TestInstruction(s, Instruction.addi) ? 1 : 0;
+            count += TestInstruction(s, Instruction.mulr) ? 1 : 0;
+            count += TestInstruction(s, Instruction.muli) ? 1 : 0;
+            count += TestInstruction(s, Instruction.banr) ? 1 : 0;
+            count += TestInstruction(s, Instruction.bani) ? 1 : 0;
+            count += TestInstruction(s, Instruction.borr) ? 1 : 0;
+            count += TestInstruction(s, Instruction.bori) ? 1 : 0;
+            count += TestInstruction(s, Instruction.setr) ? 1 : 0;
+            count += TestInstruction(s, Instruction.seti) ? 1 : 0;
+            count += TestInstruction(s, Instruction.gtir) ? 1 : 0;
+            count += TestInstruction(s, Instruction.gtri) ? 1 : 0;
+            count += TestInstruction(s, Instruction.gtrr) ? 1 : 0;
+            count += TestInstruction(s, Instruction.eqir) ? 1 : 0;
+            count += TestInstruction(s, Instruction.eqri) ? 1 : 0;
+            count += TestInstruction(s, Instruction.eqrr) ? 1 : 0;
             return count;
         }
 
