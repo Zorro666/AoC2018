@@ -412,7 +412,7 @@ namespace Day15
         public void Simulate(string[] map, int rounds, string[] expected)
         {
             Program.Parse(map);
-            Program.Simulate(rounds);
+            Program.Simulate(rounds, 3);
             Assert.That(Program.GetMap(), Is.EqualTo(expected));
         }
 
@@ -443,7 +443,7 @@ namespace Day15
         public void ResolveCombat(string[] map, int x, int y, int expected)
         {
             Program.Parse(map);
-            Program.Simulate(1);
+            Program.Simulate(1, 3);
             Assert.That(Program.GetHP(x, y), Is.EqualTo(expected));
         }
 
@@ -512,7 +512,123 @@ namespace Day15
         public void BattleResult(string[] map, int expected)
         {
             Program.Parse(map);
-            Assert.That(Program.BattleResult(), Is.EqualTo(expected));
+            Assert.That(Program.BattleResult(3), Is.EqualTo(expected));
+        }
+
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 15, TestName = "ElfAttackPower A = 15")]
+        [TestCase(
+            new string[] {
+"#######",
+"#E..EG#",
+"#.#G.E#",
+"#E.##E#",
+"#G..#.#",
+"#..E#.#",
+"#######"
+                }, 4, TestName = "ElfAttackPower B = 4")]
+        [TestCase(
+            new string[] {
+"#######",
+"#E.G#.#",
+"#.#G..#",
+"#G.#.G#",
+"#G..#.#",
+"#...E.#",
+"#######"
+                }, 15, TestName = "ElfAttackPower C = 15")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.E...#",
+"#.#..G#",
+"#.###.#",
+"#E#G#G#",
+"#...#G#",
+"#######"
+                }, 12, TestName = "ElfAttackPower D = 12")]
+        [TestCase(
+            new string[] {
+"#########",
+"#G......#",
+"#.E.#...#",
+"#..##..G#",
+"#...##..#",
+"#...#...#",
+"#.G...G.#",
+"#.....G.#",
+"#########"
+                }, 34, TestName = "ElfAttackPower E = 34")]
+        public void ElfAttackPower(string[] map, int expected)
+        {
+            Program.Parse(map);
+            Assert.That(Program.ElfAttackPower(), Is.EqualTo(expected));
+        }
+
+        [TestCase(
+            new string[] {
+"#######",
+"#.G...#",
+"#...EG#",
+"#.#.#G#",
+"#..G#E#",
+"#.....#",
+"#######"
+                }, 29 * 172, TestName = "ElfWinBattleResult A = 4988")]
+        [TestCase(
+            new string[] {
+"#######",
+"#E..EG#",
+"#.#G.E#",
+"#E.##E#",
+"#G..#.#",
+"#..E#.#",
+"#######"
+                }, 33 * 948, TestName = "ElfWinBattleResult B = 31284")]
+        [TestCase(
+            new string[] {
+"#######",
+"#E.G#.#",
+"#.#G..#",
+"#G.#.G#",
+"#G..#.#",
+"#...E.#",
+"#######"
+                }, 37 * 94, TestName = "ElfWinBattleResult C = 3478")]
+        [TestCase(
+            new string[] {
+"#######",
+"#.E...#",
+"#.#..G#",
+"#.###.#",
+"#E#G#G#",
+"#...#G#",
+"#######"
+                }, 39 * 166, TestName = "ElfWinBattleResult D = 6474")]
+        [TestCase(
+            new string[] {
+"#########",
+"#G......#",
+"#.E.#...#",
+"#..##..G#",
+"#...##..#",
+"#...#...#",
+"#.G...G.#",
+"#.....G.#",
+"#########"
+                }, 30 * 38, TestName = "ElfWinBattleResult E = 1140")]
+        public void ElfWinBattleResult(string[] map, int expected)
+        {
+            Program.Parse(map);
+            Assert.That(Program.ElfWinBattleResult(), Is.EqualTo(expected));
         }
     }
 }
