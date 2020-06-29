@@ -77,7 +77,19 @@ namespace Day15
 "#...#.#",
 "#.G.#G#",
 "#######"
-                }, 1, 1, 4, 1, TestName = "ClosestTarget (4,1)")]
+                }, 1, 1, 3, 1, TestName = "ClosestTarget (3,1)")]
+        [TestCase(
+            new string[] {
+"#########",
+"#.......#",
+"#..GGG..#",
+"#..GEG..#",
+"#G..G...#",
+"#......G#",
+"#.......#",
+"#.......#",
+"#########"
+                }, 7, 5, int.MaxValue, int.MaxValue, TestName = "ClosestTarget (7,5) None")]
         public void ClosestTarget(string[] map, int fromX, int fromY, int expectedX, int expectedY)
         {
             Program.Parse(map);
@@ -415,7 +427,19 @@ namespace Day15
 "#.......#",
 "#.......#",
 "#########"
-                }, 4, 2, 197, TestName = "ResolveCombat 3")]
+                }, 4, 2, 200 - 1 * 3, TestName = "ResolveCombat(4,2) 3")]
+        [TestCase(
+            new string[] {
+"#########",
+"#.......#",
+"#..GGG..#",
+"#..GEG..#",
+"#G..G...#",
+"#......G#",
+"#.......#",
+"#.......#",
+"#########"
+                }, 4, 3, 200 - 4 * 3, TestName = "ResolveCombat(4,3) 3")]
         public void ResolveCombat(string[] map, int x, int y, int expected)
         {
             Program.Parse(map);
