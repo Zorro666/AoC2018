@@ -104,8 +104,11 @@ namespace Day16
 {
     class Program
     {
+        const int MAX_NUM_INSTRUCTIONS = 1024;
         const int MAX_NUM_SAMPLES = 1024;
         const int MAX_NUM_REGISTERS = 4;
+        const int MAX_NUM_OPCODES = 16;
+        const int NUM_INTS_PER_INSTRUCTION = 4;
         enum Instruction
         {
             addr = 0,
@@ -123,17 +126,19 @@ namespace Day16
             gtrr = 12,
             eqir = 13,
             eqri = 14,
-            eqrr = 15
+            eqrr = 15,
+            UNKNOWN = 16
         };
 
         readonly private static int[,] sBeforeRegisters = new int[MAX_NUM_SAMPLES, MAX_NUM_REGISTERS];
         readonly private static int[,] sAfterRegisters = new int[MAX_NUM_SAMPLES, MAX_NUM_REGISTERS];
-        readonly private static int[] sOpcodes = new int[MAX_NUM_SAMPLES];
-        readonly private static int[] sInputAs = new int[MAX_NUM_SAMPLES];
-        readonly private static int[] sInputBs = new int[MAX_NUM_SAMPLES];
-        readonly private static int[] sOutputRegs = new int[MAX_NUM_SAMPLES];
+        readonly private static int[,] sSampleInstructions = new int[MAX_NUM_SAMPLES, NUM_INTS_PER_INSTRUCTION];
         readonly private static int[] sRegisters = new int[MAX_NUM_REGISTERS];
+        readonly private static int[] sTranslatedInstructions = new int[MAX_NUM_OPCODES];
+        readonly private static int[] sTranslatedOpcodes = new int[MAX_NUM_OPCODES];
+        readonly private static int[,] sProgram = new int[MAX_NUM_INSTRUCTIONS, NUM_INTS_PER_INSTRUCTION];
         static int sSamplesCount;
+        static int sInstructionsCount;
 
         private Program(string inputFile, bool part1)
         {
@@ -152,9 +157,10 @@ namespace Day16
             }
             else
             {
-                var result2 = -123;
+                RunProgram();
+                var result2 = sRegisters[0];
                 Console.WriteLine($"Day16 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 525;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -173,9 +179,11 @@ namespace Day16
         public static void Parse(string[] lines)
         {
             sSamplesCount = 0;
+            sInstructionsCount = 0;
             bool lookingForBefore = true;
             bool lookingForOpcode = false;
             bool lookingForAfter = false;
+            bool lookingForInstructions = false;
             int programStart = int.MinValue;
             for (var y = 0; y < lines.Length; ++y)
             {
@@ -199,7 +207,10 @@ namespace Day16
                         if (opcodes.Length == 4)
                         {
                             programStart = y;
-                            break;
+                            lookingForBefore = false;
+                            lookingForOpcode = false;
+                            lookingForAfter = false;
+                            lookingForInstructions = true;
                         }
                         else
                         {
@@ -220,36 +231,37 @@ namespace Day16
                         }
                         var instructionText = tokens[1].TrimEnd(']');
                         tokens = instructionText.Split(',');
-                        if (tokens.Length != 4)
+                        if (tokens.Length != MAX_NUM_REGISTERS)
                         {
-                            throw new InvalidProgramException($"Bad line '{l}' expecting 4 tokens got {tokens.Length}");
+                            throw new InvalidProgramException($"Bad line '{l}' expecting {MAX_NUM_REGISTERS} tokens got {tokens.Length}");
                         }
 
-                        for (var i = 0; i < 4; ++i)
+                        for (var i = 0; i < MAX_NUM_REGISTERS; ++i)
                         {
                             sBeforeRegisters[sSamplesCount, i] = int.Parse(tokens[i]);
                         }
                         lookingForBefore = false;
                         lookingForOpcode = true;
                         lookingForAfter = false;
+                        lookingForInstructions = false;
                     }
                 }
                 else if (lookingForOpcode == true)
                 {
                     // '13 1 2 3'
                     var tokens = l.Split();
-                    if (tokens.Length != 4)
+                    if (tokens.Length != NUM_INTS_PER_INSTRUCTION)
                     {
-                        throw new InvalidProgramException($"Bad line '{l}' expecting 4 tokens got {tokens.Length}");
+                        throw new InvalidProgramException($"Bad line '{l}' expecting {NUM_INTS_PER_INSTRUCTION} tokens got {tokens.Length}");
                     }
-
-                    sOpcodes[sSamplesCount] = int.Parse(tokens[0]);
-                    sInputAs[sSamplesCount] = int.Parse(tokens[1]);
-                    sInputBs[sSamplesCount] = int.Parse(tokens[2]);
-                    sOutputRegs[sSamplesCount] = int.Parse(tokens[3]);
+                    for (var i = 0; i < NUM_INTS_PER_INSTRUCTION; ++i)
+                    {
+                        sSampleInstructions[sSamplesCount, i] = int.Parse(tokens[i]);
+                    }
                     lookingForBefore = false;
                     lookingForOpcode = false;
                     lookingForAfter = true;
+                    lookingForInstructions = false;
                 }
                 else if (lookingForAfter == true)
                 {
@@ -272,12 +284,12 @@ namespace Day16
                         }
                         var instructionText = tokens[1].TrimEnd(']');
                         tokens = instructionText.Split(',');
-                        if (tokens.Length != 4)
+                        if (tokens.Length != MAX_NUM_REGISTERS)
                         {
-                            throw new InvalidProgramException($"Bad line '{l}' expecting 4 tokens got {tokens.Length}");
+                            throw new InvalidProgramException($"Bad line '{l}' expecting {MAX_NUM_REGISTERS} tokens got {tokens.Length}");
                         }
 
-                        for (var i = 0; i < 4; ++i)
+                        for (var i = 0; i < MAX_NUM_REGISTERS; ++i)
                         {
                             sAfterRegisters[sSamplesCount, i] = int.Parse(tokens[i]);
                         }
@@ -285,7 +297,22 @@ namespace Day16
                         lookingForBefore = true;
                         lookingForOpcode = false;
                         lookingForAfter = false;
+                        lookingForInstructions = false;
                     }
+                }
+                if (lookingForInstructions)
+                {
+                    // '13 1 2 3'
+                    var tokens = l.Split();
+                    if (tokens.Length != NUM_INTS_PER_INSTRUCTION)
+                    {
+                        throw new InvalidProgramException($"Bad line '{l}' expecting {NUM_INTS_PER_INSTRUCTION} tokens got {tokens.Length}");
+                    }
+                    for (var i = 0; i < NUM_INTS_PER_INSTRUCTION; ++i)
+                    {
+                        sProgram[sInstructionsCount, i] = int.Parse(tokens[i]);
+                    }
+                    ++sInstructionsCount;
                 }
             }
         }
@@ -454,9 +481,9 @@ namespace Day16
 
         private static bool TestInstruction(int s, Instruction instruction)
         {
-            var A = sInputAs[s];
-            var B = sInputBs[s];
-            var C = sOutputRegs[s];
+            var A = sSampleInstructions[s, 1];
+            var B = sSampleInstructions[s, 2];
+            var C = sSampleInstructions[s, 3];
 
             PrepareRegisters(s);
             sRegisters[C] = instruction switch
@@ -483,35 +510,149 @@ namespace Day16
             return TestRegisters(s);
         }
 
+        private static int IdentifyOpcode(int s, out Instruction instruction)
+        {
+            var count = 0;
+            instruction = Instruction.UNKNOWN;
+
+            for (var i = 0; i < MAX_NUM_OPCODES; ++i)
+            {
+                if (sTranslatedInstructions[i] != int.MinValue)
+                {
+                    continue;
+                }
+                Instruction testInstructon = (Instruction)i;
+                if (TestInstruction(s, testInstructon))
+                {
+                    ++count;
+                    instruction = testInstructon;
+                }
+            }
+            if (count != 1)
+            {
+                instruction = Instruction.UNKNOWN;
+            }
+            return count;
+        }
+
+        private static void ExecuteInstruction(int i)
+        {
+            var opcode = sProgram[i, 0];
+            var A = sProgram[i, 1];
+            var B = sProgram[i, 2];
+            var C = sProgram[i, 3];
+            var instruction = (Instruction)sTranslatedOpcodes[opcode];
+            if (instruction == Instruction.UNKNOWN)
+            {
+                throw new InvalidProgramException($"Executing an unknown instruction {i} opcode {opcode}");
+            }
+            sRegisters[C] = instruction switch
+            {
+                Instruction.addr => Instruction_addr(A, B, C),
+                Instruction.addi => Instruction_addi(A, B, C),
+                Instruction.mulr => Instruction_mulr(A, B, C),
+                Instruction.muli => Instruction_muli(A, B, C),
+                Instruction.banr => Instruction_banr(A, B, C),
+                Instruction.bani => Instruction_bani(A, B, C),
+                Instruction.borr => Instruction_borr(A, B, C),
+                Instruction.bori => Instruction_bori(A, B, C),
+                Instruction.setr => Instruction_setr(A, B, C),
+                Instruction.seti => Instruction_seti(A, B, C),
+                Instruction.gtir => Instruction_gtir(A, B, C),
+                Instruction.gtri => Instruction_gtri(A, B, C),
+                Instruction.gtrr => Instruction_gtrr(A, B, C),
+                Instruction.eqir => Instruction_eqir(A, B, C),
+                Instruction.eqri => Instruction_eqri(A, B, C),
+                Instruction.eqrr => Instruction_eqrr(A, B, C),
+                _ => throw new NotImplementedException()
+            };
+        }
+
+        private static void RunProgram()
+        {
+            IdentfyOpcodes();
+            for (var r = 0; r < MAX_NUM_REGISTERS; ++r)
+            {
+                sRegisters[r] = 0;
+            }
+            for (var i = 0; i < sInstructionsCount; ++i)
+            {
+                ExecuteInstruction(i);
+            }
+        }
+
+        private static void IdentfyOpcodes()
+        {
+            for (var i = 0; i < MAX_NUM_OPCODES; ++i)
+            {
+                sTranslatedInstructions[i] = int.MinValue;
+                sTranslatedOpcodes[i] = (int)Instruction.UNKNOWN;
+            }
+            var countIdentified = 0;
+            bool identified = false;
+            do
+            {
+                for (var o = 0; o < MAX_NUM_OPCODES; ++o)
+                {
+                    identified = false;
+                    if (sTranslatedOpcodes[o] != (int)Instruction.UNKNOWN)
+                    {
+                        continue;
+                    }
+                    Instruction instruction = Instruction.UNKNOWN;
+                    for (var s = 0; s < sSamplesCount; ++s)
+                    {
+                        if (sSampleInstructions[s, 0] == o)
+                        {
+                            var matchCount = IdentifyOpcode(s, out instruction);
+                            if (matchCount > 1)
+                            {
+                                break;
+                            }
+                            if (matchCount == 1)
+                            {
+                                identified = true;
+                            }
+                        }
+                    }
+                    if (identified)
+                    {
+                        sTranslatedInstructions[(int)instruction] = o;
+                        sTranslatedOpcodes[o] = (int)instruction;
+                        ++countIdentified;
+                        break;
+                    }
+                }
+            }
+            while (identified);
+            if (countIdentified != MAX_NUM_OPCODES)
+            {
+                throw new InvalidProgramException($"Failed to identify all the instructions {countIdentified} / {MAX_NUM_OPCODES}");
+            }
+        }
+
         private static int TestSample(int s)
         {
             var count = 0;
 
-            count += TestInstruction(s, Instruction.addr) ? 1 : 0;
-            count += TestInstruction(s, Instruction.addi) ? 1 : 0;
-            count += TestInstruction(s, Instruction.mulr) ? 1 : 0;
-            count += TestInstruction(s, Instruction.muli) ? 1 : 0;
-            count += TestInstruction(s, Instruction.banr) ? 1 : 0;
-            count += TestInstruction(s, Instruction.bani) ? 1 : 0;
-            count += TestInstruction(s, Instruction.borr) ? 1 : 0;
-            count += TestInstruction(s, Instruction.bori) ? 1 : 0;
-            count += TestInstruction(s, Instruction.setr) ? 1 : 0;
-            count += TestInstruction(s, Instruction.seti) ? 1 : 0;
-            count += TestInstruction(s, Instruction.gtir) ? 1 : 0;
-            count += TestInstruction(s, Instruction.gtri) ? 1 : 0;
-            count += TestInstruction(s, Instruction.gtrr) ? 1 : 0;
-            count += TestInstruction(s, Instruction.eqir) ? 1 : 0;
-            count += TestInstruction(s, Instruction.eqri) ? 1 : 0;
-            count += TestInstruction(s, Instruction.eqrr) ? 1 : 0;
+            for (var i = 0; i < MAX_NUM_OPCODES; ++i)
+            {
+                Instruction testInstructon = (Instruction)i;
+                if (TestInstruction(s, testInstructon))
+                {
+                    ++count;
+                }
+            }
             return count;
         }
+
 
         public static int CountThreeOrMoreOpcodes()
         {
             var count = 0;
-            for (var i = 0; i < sSamplesCount; ++i)
+            for (var s = 0; s < sSamplesCount; ++s)
             {
-                count += TestSample(i) >= 3 ? 1 : 0;
+                count += TestSample(s) >= 3 ? 1 : 0;
             }
             return count;
         }
