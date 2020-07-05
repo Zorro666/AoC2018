@@ -72,6 +72,35 @@ namespace Day19
 {
     class Program
     {
+        const int MAX_NUM_INSTRUCTIONS = 1024;
+        const int MAX_NUM_REGISTERS = 6;
+        const int NUM_INTS_PER_INSTRUCTION = 4;
+        enum Instruction
+        {
+            addr = 0,
+            addi = 1,
+            mulr = 2,
+            muli = 3,
+            banr = 4,
+            bani = 5,
+            borr = 6,
+            bori = 7,
+            setr = 8,
+            seti = 9,
+            gtir = 10,
+            gtri = 11,
+            gtrr = 12,
+            eqir = 13,
+            eqri = 14,
+            eqrr = 15,
+            UNKNOWN = 16
+        };
+
+        readonly private static int[] sRegisters = new int[MAX_NUM_REGISTERS];
+        readonly private static int[,] sProgram = new int[MAX_NUM_INSTRUCTIONS, NUM_INTS_PER_INSTRUCTION];
+        static int sInstructionsCount;
+        static int sPCregister;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
@@ -82,7 +111,7 @@ namespace Day19
                 RunProgram();
                 var result1 = GetRegister(0);
                 Console.WriteLine($"Day19 : Result1 {result1}");
-                var expected = 280;
+                var expected = 1922;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -100,19 +129,264 @@ namespace Day19
             }
         }
 
+        private static int Instruction_addr(int A, int B, int C)
+        {
+            // addr(add register) stores into register C the result of adding register A and register B.
+            var valueA = sRegisters[A];
+            var valueB = sRegisters[B];
+            var output = valueA + valueB;
+            return output;
+        }
+
+        private static int Instruction_addi(int A, int B, int C)
+        {
+            // addi(add immediate) stores into register C the result of adding register A and value B.
+            var valueA = sRegisters[A];
+            var valueB = B;
+            var output = valueA + valueB;
+            return output;
+        }
+
+        private static int Instruction_mulr(int A, int B, int C)
+        {
+            // mulr(multiply register) stores into register C the result of multiplying register A and register B.
+            var valueA = sRegisters[A];
+            var valueB = sRegisters[B];
+            var output = valueA * valueB;
+            return output;
+        }
+
+        private static int Instruction_muli(int A, int B, int C)
+        {
+            // muli(multiply immediate) stores into register C the result of multiplying register A and value B.
+            var valueA = sRegisters[A];
+            var valueB = B;
+            var output = valueA * valueB;
+            return output;
+        }
+
+        private static int Instruction_banr(int A, int B, int C)
+        {
+            // banr(bitwise AND register) stores into register C the result of the bitwise AND of register A and register B.
+            var valueA = sRegisters[A];
+            var valueB = sRegisters[B];
+            var output = valueA & valueB;
+            return output;
+        }
+
+        private static int Instruction_bani(int A, int B, int C)
+        {
+            // bani(bitwise AND immediate) stores into register C the result of the bitwise AND of register A and value B.
+            var valueA = sRegisters[A];
+            var valueB = B;
+            var output = valueA & valueB;
+            return output;
+        }
+
+        private static int Instruction_borr(int A, int B, int C)
+        {
+            // borr (bitwise OR register) stores into register C the result of the bitwise OR of register A and register B.
+            var valueA = sRegisters[A];
+            var valueB = sRegisters[B];
+            var output = valueA | valueB;
+            return output;
+        }
+
+        private static int Instruction_bori(int A, int B, int C)
+        {
+            // bori (bitwise OR immediate) stores into register C the result of the bitwise OR of register A and value B.
+            var valueA = sRegisters[A];
+            var valueB = B;
+            var output = valueA | valueB;
+            return output;
+        }
+
+        private static int Instruction_setr(int A, int _, int C)
+        {
+            // setr (set register) copies the contents of register A into register C. (Input B is ignored.)
+            var valueA = sRegisters[A];
+            var output = valueA;
+            return output;
+        }
+
+        private static int Instruction_seti(int A, int _, int C)
+        {
+            // seti(set immediate) stores value A into register C. (Input B is ignored.)
+            var valueA = A;
+            var output = valueA;
+            return output;
+        }
+
+        private static int Instruction_gtir(int A, int B, int C)
+        {
+            // gtir(greater-than immediate/register) sets register C to 1 if value A is greater than register B. Otherwise, register C is set to 0.
+            var valueA = A;
+            var valueB = sRegisters[B];
+            var output = valueA > valueB ? 1 : 0;
+            return output;
+        }
+
+        private static int Instruction_gtri(int A, int B, int C)
+        {
+            // gtri (greater-than register/immediate) sets register C to 1 if register A is greater than value B. Otherwise, register C is set to 0.
+            var valueA = sRegisters[A];
+            var valueB = B;
+            var output = valueA > valueB ? 1 : 0;
+            return output;
+        }
+
+        private static int Instruction_gtrr(int A, int B, int C)
+        {
+            // gtrr (greater-than register/register) sets register C to 1 if register A is greater than register B. Otherwise, register C is set to 0.
+            var valueA = sRegisters[A];
+            var valueB = sRegisters[B];
+            var output = valueA > valueB ? 1 : 0;
+            return output;
+        }
+
+        private static int Instruction_eqir(int A, int B, int C)
+        {
+            // eqir (equal immediate/register) sets register C to 1 if value A is equal to register B. Otherwise, register C is set to 0.
+            var valueA = A;
+            var valueB = sRegisters[B];
+            var output = valueA == valueB ? 1 : 0;
+            return output;
+        }
+
+        private static int Instruction_eqri(int A, int B, int C)
+        {
+            // eqri (equal register/immediate) sets register C to 1 if register A is equal to value B. Otherwise, register C is set to 0.
+            var valueA = sRegisters[A];
+            var valueB = B;
+            var output = valueA == valueB ? 1 : 0;
+            return output;
+        }
+
+        private static int Instruction_eqrr(int A, int B, int C)
+        {
+            // eqrr (equal register/register) sets register C to 1 if register A is equal to register B. Otherwise, register C is set to 0.
+            var valueA = sRegisters[A];
+            var valueB = sRegisters[B];
+            var output = valueA == valueB ? 1 : 0;
+            return output;
+        }
+
+        private static void ExecuteInstruction(int i)
+        {
+            var opcode = sProgram[i, 0];
+            var A = sProgram[i, 1];
+            var B = sProgram[i, 2];
+            var C = sProgram[i, 3];
+            var instruction = (Instruction)opcode;
+            if (instruction == Instruction.UNKNOWN)
+            {
+                throw new InvalidProgramException($"Executing an unknown instruction {i} opcode {opcode}");
+            }
+            sRegisters[C] = instruction switch
+            {
+                Instruction.addr => Instruction_addr(A, B, C),
+                Instruction.addi => Instruction_addi(A, B, C),
+                Instruction.mulr => Instruction_mulr(A, B, C),
+                Instruction.muli => Instruction_muli(A, B, C),
+                Instruction.banr => Instruction_banr(A, B, C),
+                Instruction.bani => Instruction_bani(A, B, C),
+                Instruction.borr => Instruction_borr(A, B, C),
+                Instruction.bori => Instruction_bori(A, B, C),
+                Instruction.setr => Instruction_setr(A, B, C),
+                Instruction.seti => Instruction_seti(A, B, C),
+                Instruction.gtir => Instruction_gtir(A, B, C),
+                Instruction.gtri => Instruction_gtri(A, B, C),
+                Instruction.gtrr => Instruction_gtrr(A, B, C),
+                Instruction.eqir => Instruction_eqir(A, B, C),
+                Instruction.eqri => Instruction_eqri(A, B, C),
+                Instruction.eqrr => Instruction_eqrr(A, B, C),
+                _ => throw new NotImplementedException()
+            };
+        }
+
         public static void Parse(string[] lines)
         {
-            throw new NotImplementedException();
+            sInstructionsCount = 0;
+            sPCregister = int.MinValue;
+            if (lines.Length == 0)
+            {
+                throw new InvalidProgramException($"Empty input");
+            }
+
+            //#ip 0
+            var line = lines[0].Trim();
+            var tokens = line.Split();
+            if (tokens.Length != 2)
+            {
+                throw new InvalidProgramException($"Invalid line '{line}' got {tokens.Length} tokens expected 2");
+            }
+            if (tokens[0].Trim() != "#ip")
+            {
+                throw new InvalidProgramException($"Invalid line '{line}' got '{tokens[0]}' expected '#ip'");
+            }
+            sPCregister = int.Parse(tokens[1]);
+            if ((sPCregister < 0) || (sPCregister >= MAX_NUM_REGISTERS))
+            {
+                throw new InvalidProgramException($"Invalid line '{line}' PCregister {sPCregister} out of range 0-{MAX_NUM_REGISTERS}");
+            }
+
+            for (var y = 1; y < lines.Length; ++y)
+            {
+                //seti 5 0 1
+                line = lines[y].Trim();
+                tokens = line.Split();
+                if (tokens.Length != 4)
+                {
+                    throw new InvalidProgramException($"Invalid line '{line}' got {tokens.Length} expected 4");
+                }
+                var instruction = tokens[0] switch
+                {
+                    "addr" => Instruction.addr,
+                    "addi" => Instruction.addi,
+                    "mulr" => Instruction.mulr,
+                    "muli" => Instruction.muli,
+                    "banr" => Instruction.banr,
+                    "bani" => Instruction.bani,
+                    "borr" => Instruction.borr,
+                    "bori" => Instruction.bori,
+                    "setr" => Instruction.setr,
+                    "seti" => Instruction.seti,
+                    "gtir" => Instruction.gtir,
+                    "gtri" => Instruction.gtri,
+                    "gtrr" => Instruction.gtrr,
+                    "eqir" => Instruction.eqir,
+                    "eqri" => Instruction.eqri,
+                    "eqrr" => Instruction.eqrr,
+                    _ => throw new InvalidProgramException($"Unknown register 'tokens[0]'")
+                };
+                sProgram[sInstructionsCount, 0] = (int)instruction;
+                for (var i = 1; i < NUM_INTS_PER_INSTRUCTION; ++i)
+                {
+                    sProgram[sInstructionsCount, i] = int.Parse(tokens[i]);
+                }
+                ++sInstructionsCount;
+            }
         }
 
         public static void RunProgram()
         {
-            throw new NotImplementedException();
+            for (var r = 0; r < MAX_NUM_REGISTERS; ++r)
+            {
+                sRegisters[r] = 0;
+            }
+            var pc = 0;
+            while ((pc >= 0) && (pc < sInstructionsCount))
+            {
+                sRegisters[sPCregister] = pc;
+                ExecuteInstruction(pc);
+                pc = sRegisters[sPCregister];
+                ++pc;
+            }
         }
 
         public static int GetRegister(int register)
         {
-            throw new NotImplementedException();
+            return sRegisters[register];
         }
 
         public static void Run()
