@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 
 /*
 
@@ -174,34 +175,69 @@ So, in the example above, counting both water at rest (~) and other sand tiles t
 
 How many tiles can the water reach within the range of y values in your scan?
 
+Your puzzle answer was 29802.
+
+--- Part Two ---
+
+After a very long time, the water spring will run dry. How much water will be retained?
+
+In the example above, water that won't eventually drain out is shown as ~, a total of 29 tiles.
+
+How many water tiles are left after the water spring stops producing water and all remaining water not at rest has drained?
+
 */
 
 namespace Day17
 {
     class Program
     {
+        const int MAX_GRID_WIDTH = 2048;
+        const int MAX_GRID_HEIGHT = 2048;
+        const int MAX_NUM_SPRINGS = 128;
+        readonly static char[,] sMapInitial = new char[MAX_GRID_WIDTH, MAX_GRID_HEIGHT];
+        readonly static char[,] sMapCurrent = new char[MAX_GRID_WIDTH, MAX_GRID_HEIGHT];
+        readonly static int[] sSpringsDownX = new int[MAX_NUM_SPRINGS];
+        readonly static int[] sSpringsDownY = new int[MAX_NUM_SPRINGS];
+        readonly static int[] sSpringsLeftX = new int[MAX_NUM_SPRINGS];
+        readonly static int[] sSpringsLeftY = new int[MAX_NUM_SPRINGS];
+        readonly static int[] sSpringsRightX = new int[MAX_NUM_SPRINGS];
+        readonly static int[] sSpringsRightY = new int[MAX_NUM_SPRINGS];
+        static int sNumSpringsDown;
+        static int sNumSpringsLeft;
+        static int sNumSpringsRight;
+
+        static int sMinX = int.MaxValue;
+        static int sMaxX = int.MinValue;
+        static int sMinY = int.MaxValue;
+        static int sMaxY = int.MinValue;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
             Parse(lines);
+            SimulateWater();
+            (var wet, var settled) = CountWater();
 
             if (part1)
             {
-                var result1 = CountWaterTiles();
+                var result1 = wet + settled;
                 Console.WriteLine($"Day17 : Result1 {result1}");
-                var expected = 280;
+                var expected = 29802;
+
                 if (result1 != expected)
                 {
+                    OutputMap();
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
                 }
             }
             else
             {
-                var result2 = -123;
+                var result2 = settled;
                 Console.WriteLine($"Day17 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 24660;
                 if (result2 != expected)
                 {
+                    OutputMap();
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
                 }
             }
@@ -209,11 +245,565 @@ namespace Day17
 
         public static void Parse(string[] lines)
         {
+            for (var y = 0; y < MAX_GRID_HEIGHT; ++y)
+            {
+                for (var x = 0; x < MAX_GRID_WIDTH; ++x)
+                {
+                    sMapInitial[x, y] = '.';
+                }
+            }
+            sMapInitial[500, 0] = '+';
+            foreach (var line in lines)
+            {
+                // "x=495, y=2..7",
+                // "y=7, x=495..501",
+                var tokens = line.Trim().Split(',');
+                if (tokens.Length != 2)
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected 2 , separated tokens got {tokens.Length}");
+                }
+                var valueOneTokens = tokens[0].Trim().Split('=');
+                if (valueOneTokens.Length != 2)
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected 2 = separated tokens got {valueOneTokens.Length}");
+                }
+                var valueTwoTokens = tokens[1].Trim().Split('=');
+                if (valueTwoTokens.Length != 2)
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected 2 = separated tokens got {valueTwoTokens.Length}");
+                }
+
+                var xMin = int.MaxValue;
+                var xMax = int.MinValue;
+                var yMin = int.MaxValue;
+                var yMax = int.MinValue;
+                var axisOne = valueOneTokens[0].Trim()[0];
+                var valueOne = int.Parse(valueOneTokens[1]);
+                var expectedAxisTwo = '?';
+                if (axisOne == 'x')
+                {
+                    xMin = valueOne;
+                    xMax = valueOne;
+                    expectedAxisTwo = 'y';
+                }
+                else if (axisOne == 'y')
+                {
+                    yMin = valueOne;
+                    yMax = valueOne;
+                    expectedAxisTwo = 'x';
+                }
+                else
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected first value to be 'x' or 'y' got {valueOneTokens[0]}");
+                }
+                var axisTwo = valueTwoTokens[0].Trim()[0];
+                if (axisTwo != expectedAxisTwo)
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected second value to be '{expectedAxisTwo}' got {axisTwo}");
+                }
+                var valueTwoMinMaxTokens = valueTwoTokens[1].Trim().Split("..");
+                if (valueTwoMinMaxTokens.Length != 2)
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected 2 values separated by '..' got '{valueTwoMinMaxTokens.Length}'");
+                }
+                var valueTwoMin = int.Parse(valueTwoMinMaxTokens[0]);
+                var valueTwoMax = int.Parse(valueTwoMinMaxTokens[1]);
+                if (axisTwo == 'x')
+                {
+                    xMin = valueTwoMin;
+                    xMax = valueTwoMax;
+                }
+                else if (axisTwo == 'y')
+                {
+                    yMin = valueTwoMin;
+                    yMax = valueTwoMax;
+                }
+                else
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' expected second value to be 'x' or 'y' got {valueOneTokens[0]}");
+                }
+                if ((xMin < 0) || (xMin > MAX_GRID_WIDTH))
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' xMin {xMin} out-of-range {0} -> {MAX_GRID_WIDTH}");
+                }
+                if ((xMax < 0) || (xMax > MAX_GRID_WIDTH))
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' xMax {xMax} out-of-range {0} -> {MAX_GRID_WIDTH}");
+                }
+                if ((yMin < 0) || (yMin > MAX_GRID_WIDTH))
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' yMin {yMin} out-of-range {0} -> {MAX_GRID_HEIGHT}");
+                }
+                if ((yMax < 0) || (yMax > MAX_GRID_WIDTH))
+                {
+                    throw new InvalidProgramException($"Unexpected line '{line}' yMax {yMax} out-of-range {0} -> {MAX_GRID_HEIGHT}");
+                }
+                for (var y = yMin; y <= yMax; ++y)
+                {
+                    for (var x = xMin; x <= xMax; ++x)
+                    {
+                        sMapInitial[x, y] = '#';
+                    }
+                }
+
+                sMinX = Math.Min(sMinX, xMin);
+                sMaxX = Math.Max(sMaxX, xMax);
+
+                sMinY = Math.Min(sMinY, yMin);
+                sMaxY = Math.Max(sMaxY, yMax);
+            }
+            // Water can go one cell either side of the walls
+            --sMinX;
+            ++sMaxX;
         }
 
-        public static int CountWaterTiles()
+        public static (int wet, int settled) CountWater()
         {
-            return int.MinValue;
+            int wet = 0;
+            int settled = 0;
+            for (var y = sMinY; y <= sMaxY; ++y)
+            {
+                for (var x = sMinX; x <= sMaxX; ++x)
+                {
+                    if (sMapCurrent[x, y] == '|')
+                    {
+                        ++wet;
+                    }
+                    else if (sMapCurrent[x, y] == '~')
+                    {
+                        ++settled;
+                    }
+                }
+            }
+            return (wet, settled);
+        }
+
+        private static void DropWater()
+        {
+            //Console.WriteLine($"B:{sNumSpringsDown} {sNumSpringsLeft} {sNumSpringsRight}");
+            while (sNumSpringsDown > 0)
+            {
+                var startX = sSpringsDownX[0];
+                var startY = sSpringsDownY[0];
+                RemoveSpringDown();
+                var x = startX;
+                var y = startY;
+                while (y <= sMaxY)
+                {
+                    var cell = sMapCurrent[x, y];
+                    var below = sMapCurrent[x, y + 1];
+                    var left = sMapCurrent[x - 1, y];
+                    var right = sMapCurrent[x + 1, y];
+                    if (cell == '.')
+                    {
+                        sMapCurrent[x, y] = '|';
+                    }
+                    else if (cell == '|')
+                    {
+                        if (below == '.')
+                        {
+                            ++y;
+                        }
+                        else if (below == '|')
+                        {
+                            ++y;
+                        }
+                        else if ((below == '#') || (below == '~'))
+                        {
+                            if ((left == '.') || (left == '|'))
+                            {
+                                AddSpringLeft(x, y);
+                            }
+                            if ((right == '.') || (right == '|'))
+                            {
+                                AddSpringRight(x, y);
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            throw new NotImplementedException($"Down: Unknown cell '{cell}' below:'{below}' left:'{left}' right:'{right}'");
+                        }
+                    }
+                    else
+                    {
+                        throw new NotImplementedException($"Down: Unknown cell '{cell}' below:'{below}' left:'{left}' right:'{right}'");
+                    }
+                }
+            }
+            while (sNumSpringsLeft > 0)
+            {
+                var startX = sSpringsLeftX[0];
+                var startY = sSpringsLeftY[0];
+                RemoveSpringLeft();
+                var x = startX - 1;
+                var y = startY;
+                while (x >= sMinX)
+                {
+                    var cell = sMapCurrent[x, y];
+                    var below = sMapCurrent[x, y + 1];
+                    var left = sMapCurrent[x - 1, y];
+                    var right = sMapCurrent[x + 1, y];
+                    if ((below == '#') || (below == '~'))
+                    {
+                        if (cell == '.')
+                        {
+                            sMapCurrent[x, y] = '|';
+                        }
+                        else if (cell == '|')
+                        {
+                            --x;
+                        }
+                        else if (cell == '#')
+                        {
+                            var xLeft = x + 1;
+                            var xRight = int.MinValue;
+                            for (var x2 = xLeft; x2 <= sMaxX; ++x2)
+                            {
+                                if (sMapCurrent[x2, y] == '#')
+                                {
+                                    xRight = x2;
+                                    break;
+                                }
+                                if (sMapCurrent[x2, y] != '|')
+                                {
+                                    break;
+                                }
+                            }
+                            if (xRight > xLeft)
+                            {
+                                for (var x2 = xLeft; x2 < xRight; ++x2)
+                                {
+                                    if (sMapCurrent[x2, y] != '|')
+                                    {
+                                        throw new NotImplementedException($"Left Settle: Unknown cell '{sMapCurrent[x2, y]}'");
+                                    }
+                                    sMapCurrent[x2, y] = '~';
+                                }
+                            }
+                            break;
+                        }
+                        else
+                        {
+                            throw new NotImplementedException($"Left: Unknown cell '{cell}' left '{left}' right '{right}' below '{below};");
+                        }
+                    }
+                    else if ((below == '.') || (below == '|'))
+                    {
+                        AddSpringDown(x, y);
+                        break;
+                    }
+                    else if ((cell == '~') && (left == '~') && (right == '~'))
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException($"Left: Unknown cell '{cell}' left '{left}' right '{right}' below '{below};");
+                    }
+                }
+            }
+            while (sNumSpringsRight > 0)
+            {
+                var startX = sSpringsRightX[0];
+                var startY = sSpringsRightY[0];
+                RemoveSpringRight();
+                var x = startX + 1;
+                var y = startY;
+                while (x <= sMaxX)
+                {
+                    var cell = sMapCurrent[x, y];
+                    var below = sMapCurrent[x, y + 1];
+                    var left = sMapCurrent[x - 1, y];
+                    var right = sMapCurrent[x + 1, y];
+                    if ((below == '#') || (below == '~'))
+                    {
+                        if (cell == '.')
+                        {
+                            sMapCurrent[x, y] = '|';
+                        }
+                        else if (cell == '|')
+                        {
+                            ++x;
+                        }
+                        else if (cell == '#')
+                        {
+                            var xLeft = int.MaxValue;
+                            var xRight = x;
+                            for (var x2 = xRight - 1; x2 >= sMinX; --x2)
+                            {
+                                if (sMapCurrent[x2, y] == '#')
+                                {
+                                    xLeft = x2 + 1;
+                                    break;
+                                }
+                                if (sMapCurrent[x2, y] != '|')
+                                {
+                                    break;
+                                }
+                            }
+                            if (xRight > xLeft)
+                            {
+                                for (var x2 = xLeft; x2 < xRight; ++x2)
+                                {
+                                    if (sMapCurrent[x2, y] != '|')
+                                    {
+                                        throw new NotImplementedException($"Right Settle: Unknown cell '{sMapCurrent[x2, y]}'");
+                                    }
+                                    sMapCurrent[x2, y] = '~';
+                                }
+                            }
+                            break;
+                        }
+                        else if ((cell == '~') && (left == '~') && (right == '~'))
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            throw new NotImplementedException($"Right: Unknown cell '{cell}' left '{left}' right '{right}' below '{below};");
+                        }
+                    }
+                    else if ((below == '.') || (below == '|'))
+                    {
+                        AddSpringDown(x, y);
+                        break;
+                    }
+                    else
+                    {
+                        throw new NotImplementedException($"Right: Unknown cell '{cell}' left '{left}' right '{right}' below '{below};");
+                    }
+                }
+            }
+        }
+
+        private static void RemoveSpringDown()
+        {
+            if (sNumSpringsDown == 0)
+            {
+                return;
+            }
+            for (var i = 1; i < sNumSpringsDown; ++i)
+            {
+                sSpringsDownX[i - 1] = sSpringsDownX[i];
+                sSpringsDownY[i - 1] = sSpringsDownY[i];
+            }
+            --sNumSpringsDown;
+        }
+
+        private static void RemoveSpringLeft()
+        {
+            if (sNumSpringsLeft == 0)
+            {
+                return;
+            }
+            for (var i = 1; i < sNumSpringsLeft; ++i)
+            {
+                sSpringsLeftX[i - 1] = sSpringsLeftX[i];
+                sSpringsLeftY[i - 1] = sSpringsLeftY[i];
+            }
+            --sNumSpringsLeft;
+        }
+
+        private static void RemoveSpringRight()
+        {
+            if (sNumSpringsRight == 0)
+            {
+                return;
+            }
+            for (var i = 1; i < sNumSpringsRight; ++i)
+            {
+                sSpringsRightX[i - 1] = sSpringsRightX[i];
+                sSpringsRightY[i - 1] = sSpringsRightY[i];
+            }
+            --sNumSpringsRight;
+        }
+
+        private static void AddSpringDown(int x, int y)
+        {
+            for (var i = 0; i < sNumSpringsDown; ++i)
+            {
+                if ((sSpringsDownX[i] == x) && (sSpringsDownY[i] == y))
+                {
+                    return;
+                }
+            }
+            sSpringsDownX[sNumSpringsDown] = x;
+            sSpringsDownY[sNumSpringsDown] = y;
+            ++sNumSpringsDown;
+        }
+
+        private static void AddSpringLeft(int x, int y)
+        {
+            for (var i = 0; i < sNumSpringsLeft; ++i)
+            {
+                if ((sSpringsLeftX[i] == x) && (sSpringsLeftY[i] == y))
+                {
+                    return;
+                }
+            }
+            sSpringsLeftX[sNumSpringsLeft] = x;
+            sSpringsLeftY[sNumSpringsLeft] = y;
+            ++sNumSpringsLeft;
+        }
+
+        private static void AddSpringRight(int x, int y)
+        {
+            for (var i = 0; i < sNumSpringsRight; ++i)
+            {
+                if ((sSpringsRightX[i] == x) && (sSpringsRightY[i] == y))
+                {
+                    return;
+                }
+            }
+            sSpringsRightX[sNumSpringsRight] = x;
+            sSpringsRightY[sNumSpringsRight] = y;
+            ++sNumSpringsRight;
+        }
+
+        private static bool IsSpringDown(int x, int y)
+        {
+            for (var i = 0; i < sNumSpringsDown; ++i)
+            {
+                if ((sSpringsDownX[i] == x) && (sSpringsDownY[i] == y))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsSpringLeft(int x, int y)
+        {
+            for (var i = 0; i < sNumSpringsLeft; ++i)
+            {
+                if ((sSpringsLeftX[i] == x) && (sSpringsLeftY[i] == y))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsSpringRight(int x, int y)
+        {
+            for (var i = 0; i < sNumSpringsRight; ++i)
+            {
+                if ((sSpringsRightX[i] == x) && (sSpringsRightY[i] == y))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static void CopyInitialSetup()
+        {
+            for (var y = 0; y < MAX_GRID_HEIGHT; ++y)
+            {
+                for (var x = 0; x < MAX_GRID_WIDTH; ++x)
+                {
+                    sMapCurrent[x, y] = sMapInitial[x, y];
+                }
+            }
+
+            sNumSpringsDown = 0;
+            sNumSpringsLeft = 0;
+            sNumSpringsRight = 0;
+        }
+
+        private static void OutputMap()
+        {
+            Console.WriteLine($"'v' {sNumSpringsDown} '<' {sNumSpringsLeft} '>' {sNumSpringsRight}");
+#if false
+            for (var y = 0; y <= sMaxY; ++y)
+            {
+                var line = "";
+                for (var x = sMinX; x <= sMaxX; ++x)
+                {
+                    if (IsSpringDown(x, y) == true)
+                    {
+                        line += 'v';
+                    }
+                    else if (IsSpringLeft(x, y) == true)
+                    {
+                        line += '<';
+                    }
+                    else if (IsSpringRight(x, y) == true)
+                    {
+                        line += '>';
+                    }
+                    else
+                    {
+                        line += sMapCurrent[x, y];
+                    }
+                }
+                Console.WriteLine(line);
+            }
+#endif // #if false
+            var lines = new string[sMaxY - 0 + 1];
+            for (var y = 0; y <= sMaxY; ++y)
+            {
+                var line = "";
+                for (var x = sMinX; x <= sMaxX; ++x)
+                {
+                    if (IsSpringDown(x, y) == true)
+                    {
+                        line += 'v';
+                    }
+                    else if (IsSpringLeft(x, y) == true)
+                    {
+                        line += '<';
+                    }
+                    else if (IsSpringRight(x, y) == true)
+                    {
+                        line += '>';
+                    }
+                    else
+                    {
+                        line += sMapCurrent[x, y];
+                    }
+                }
+                lines[y] = line;
+            }
+            File.WriteAllLines("/tmp/image0.txt", lines);
+        }
+
+        public static void SimulateWater()
+        {
+            CopyInitialSetup();
+            (var wet, var settled) = CountWater();
+            if (wet + settled != 0)
+            {
+                OutputMap();
+                throw new InvalidProgramException($"Expected WaterCount to be 0 {wet + settled}");
+            }
+            var same = 0;
+            do
+            {
+                var oldWet = wet;
+                var oldSettled = settled;
+                if ((sNumSpringsDown == 0) && (sNumSpringsLeft == 0) && (sNumSpringsRight == 0))
+                {
+                    AddSpringDown(500, 1);
+                }
+                do
+                {
+                    DropWater();
+                } while ((sNumSpringsDown != 0) || (sNumSpringsLeft != 0) || (sNumSpringsRight != 0));
+
+                (wet, settled) = CountWater();
+                if ((wet == oldWet) && (settled == oldSettled))
+                {
+                    ++same;
+                }
+                else
+                {
+                    same = 0;
+                }
+            }
+            while (same < 128);
+            //OutputMap();
         }
 
         public static void Run()
