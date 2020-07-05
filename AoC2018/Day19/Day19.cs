@@ -75,11 +75,14 @@ namespace Day19
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            Parse(lines);
+
             if (part1)
             {
-                long result1 = -666;
+                RunProgram();
+                var result1 = GetRegister(0);
                 Console.WriteLine($"Day19 : Result1 {result1}");
-                long expected = 280;
+                var expected = 280;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -87,14 +90,29 @@ namespace Day19
             }
             else
             {
-                long result2 = -123;
+                var result2 = -123;
                 Console.WriteLine($"Day19 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
                 }
             }
+        }
+
+        public static void Parse(string[] lines)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static void RunProgram()
+        {
+            throw new NotImplementedException();
+        }
+
+        public static int GetRegister(int register)
+        {
+            throw new NotImplementedException();
         }
 
         public static void Run()
