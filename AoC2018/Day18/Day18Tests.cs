@@ -6,10 +6,23 @@ namespace Day18
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day18(string directions, int expected)
+        [TestCase(new string[] {
+".#.#...|#.",
+".....#|##|",
+".|..|...#.",
+"..|#.....#",
+"#.#|||#|#|",
+"...#.||...",
+".|....|...",
+"||...#|.#|",
+"|.||||..|.",
+"...#.|..|."
+        }, 10, 37 * 31, TestName = "TotalResource A 10 = 1147")]
+        public void TotalResource(string[] lines, int minutes, int expected)
         {
-            Assert.Fail();
+            Program.Parse(lines);
+            Program.Simulate(minutes);
+            Assert.That(Program.TotalResource(), Is.EqualTo(expected));
         }
     }
 }
