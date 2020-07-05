@@ -164,6 +164,14 @@ Multiplying the number of wooded acres by the number of lumberyards gives the to
 
 What will the total resource value of the lumber collection area be after 10 minutes?
 
+Your puzzle answer was 604884.
+
+--- Part Two ---
+
+This important natural resource will need to last for at least thousands of years. Are the Elves collecting this lumber sustainably?
+
+What will the total resource value of the lumber collection area be after 1000000000 minutes?
+
 */
 
 namespace Day18
@@ -183,9 +191,10 @@ namespace Day18
 
             if (part1)
             {
-                var result1 = -666;
+                Simulate(10);
+                var result1 = TotalResource();
                 Console.WriteLine($"Day18 : Result1 {result1}");
-                var expected = 280;
+                var expected = 604884;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -193,9 +202,9 @@ namespace Day18
             }
             else
             {
-                var result2 = -123;
+                var result2 = PredictTotalResource(1000000000);
                 Console.WriteLine($"Day18 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 190820;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -205,17 +214,247 @@ namespace Day18
 
         public static void Parse(string[] lines)
         {
-            throw new NotImplementedException();
+            for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_HEIGHT; ++x)
+                {
+                    sMapInitial[x, y] = ' ';
+                }
+            }
+            var height = lines.Length;
+            if (height < 1)
+            {
+                throw new InvalidProgramException($"Invalid input need at least one line got {height}");
+            }
+            var width = lines[0].Trim().Length;
+            for (var y = 0; y < height; ++y)
+            {
+                var line = lines[y].Trim();
+                if (line.Length != width)
+                {
+                    throw new InvalidProgramException($"Invalid line '{line}' width {line.Length} expected to be {width}");
+                }
+                for (var x = 0; x < width; ++x)
+                {
+                    var cell = line[x];
+                    if ((cell != '.') && (cell != '|') && (cell != '#'))
+                    {
+                        throw new InvalidProgramException($"Invalid line '{line}' unknown cell '{cell}' expected '.' or '|' or '#'");
+                    }
+                    sMapInitial[x, y] = cell;
+                }
+            }
         }
 
-        public static void Simulate(int minutes)
+        private static void CopyInitialToCurrent()
         {
-            throw new NotImplementedException();
+            for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_WIDTH; ++x)
+                {
+                    sMapCurrent[x, y] = sMapInitial[x, y];
+                }
+            }
+        }
+
+        private static void SimulateLoop()
+        {
+            for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_WIDTH; ++x)
+                {
+                    var cell = sMapCurrent[x, y];
+                    var newCell = cell;
+                    if (cell == ' ')
+                    {
+                    }
+                    else
+                    {
+                        var countAdjacentTrees = 0;
+                        var countAdjacentLumberyards = 0;
+                        for (var y2 = y - 1; y2 <= y + 1; ++y2)
+                        {
+                            for (var x2 = x - 1; x2 <= x + 1; ++x2)
+                            {
+                                if ((y2 != y) || (x2 != x))
+                                {
+                                    var adjacentCell = ' ';
+                                    if ((x2 >= 0) && (x2 < MAX_MAP_WIDTH) && (y2 >= 0) && (y2 < MAX_MAP_HEIGHT))
+                                    {
+                                        adjacentCell = sMapCurrent[x2, y2];
+                                    }
+                                    if (adjacentCell == '|')
+                                    {
+                                        ++countAdjacentTrees;
+                                    }
+                                    else if (adjacentCell == '#')
+                                    {
+                                        ++countAdjacentLumberyards;
+                                    }
+                                }
+                            }
+                        }
+                        if (cell == '.')
+                        {
+                            // become trees if three or more adjacent acres contained trees.
+                            // Otherwise, nothing happens.
+                            if (countAdjacentTrees >= 3)
+                            {
+                                newCell = '|';
+                            }
+                        }
+                        else if (cell == '|')
+                        {
+                            // become lumberyard if three or more adjacent acres were lumberyards.
+                            // Otherwise, nothing happens.
+                            if (countAdjacentLumberyards >= 3)
+                            {
+                                newCell = '#';
+                            }
+                        }
+                        else if (cell == '#')
+                        {
+                            // remain a lumberyard if it was adjacent to at least one other lumberyard and at least one acre containing trees.
+                            // Otherwise, it becomes open.
+                            if ((countAdjacentLumberyards == 0) || (countAdjacentTrees == 0))
+                            {
+                                newCell = '.';
+                            }
+                        }
+                        else
+                        {
+                            throw new InvalidProgramException($"Unknown cell '{cell}' at {x}, {y}");
+                        }
+                    }
+                    sMapNext[x, y] = newCell;
+                }
+            }
+        }
+
+        public static void Simulate(long minutes)
+        {
+            CopyInitialToCurrent();
+            for (var m = 0; m < minutes; ++m)
+            {
+                SimulateLoop();
+                for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+                {
+                    for (var x = 0; x < MAX_MAP_WIDTH; ++x)
+                    {
+                        sMapCurrent[x, y] = sMapNext[x, y];
+                    }
+                }
+            }
+        }
+
+        public static int PredictTotalResource(long minutes)
+        {
+            (long loopStart, long loopEnd) = FindLoopPoint();
+            var loopLength = loopEnd - loopStart;
+            var wrappedMinutes = minutes - loopStart;
+            wrappedMinutes %= loopLength;
+            wrappedMinutes += loopStart;
+            Simulate(wrappedMinutes);
+            return TotalResource();
+        }
+
+        private static (int loopStart, int loopEnd) FindLoopPoint()
+        {
+            const int MAX_NUM_MINUTES = 1024;
+            var pastGrids = new char[MAX_NUM_MINUTES, MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
+            var pastTotals = new int[MAX_NUM_MINUTES];
+            CopyInitialToCurrent();
+            for (var m = 0; m < MAX_NUM_MINUTES; ++m)
+            {
+                SimulateLoop();
+                for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+                {
+                    for (var x = 0; x < MAX_MAP_WIDTH; ++x)
+                    {
+                        sMapCurrent[x, y] = sMapNext[x, y];
+                        pastGrids[m, x, y] = sMapCurrent[x, y];
+                    }
+                }
+                var totalResource = TotalResource();
+                pastTotals[m] = totalResource;
+                for (var i = 0; i < m; ++i)
+                {
+                    if (pastTotals[i] != totalResource)
+                    {
+                        continue;
+                    }
+                    var match = true;
+                    for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+                    {
+                        for (var x = 0; x < MAX_MAP_WIDTH; ++x)
+                        {
+                            if (pastGrids[i, x, y] != sMapCurrent[x, y])
+                            {
+                                match = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (match)
+                    {
+                        return (i, m);
+                    }
+                }
+            }
+            throw new InvalidProgramException($"Stable point not found");
         }
 
         public static int TotalResource()
         {
-            throw new NotImplementedException();
+            var countTrees = 0;
+            var countLumberyards = 0;
+            for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_WIDTH; ++x)
+                {
+                    var cell = sMapCurrent[x, y];
+                    if (cell == '|')
+                    {
+                        ++countTrees;
+                    }
+                    else if (cell == '#')
+                    {
+                        ++countLumberyards;
+                    }
+                }
+            }
+            return countTrees * countLumberyards;
+        }
+
+        public static string[] GetMap()
+        {
+            var width = int.MinValue;
+            var height = int.MinValue;
+            for (var y = 0; y < MAX_MAP_HEIGHT; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_WIDTH; ++x)
+                {
+                    if (sMapCurrent[x, y] != ' ')
+                    {
+                        width = Math.Max(width, x);
+                        height = Math.Max(height, y);
+                    }
+                }
+            }
+            ++width;
+            ++height;
+
+            var lines = new string[height];
+            for (var y = 0; y < height; ++y)
+            {
+                var line = "";
+                for (var x = 0; x < width; ++x)
+                {
+                    line += sMapCurrent[x, y];
+                }
+                lines[y] = line;
+            }
+            return lines;
         }
 
         public static void Run()
