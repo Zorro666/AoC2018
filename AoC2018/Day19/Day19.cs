@@ -66,6 +66,15 @@ The instruction pointer is incremented, causing it to point outside the program,
 
 What value is left in register 0 when the background process halts?
 
+Your puzzle answer was 1922.
+
+--- Part Two ---
+
+A new background process immediately spins up in its place.
+It appears identical, but on closer inspection, you notice that this time, register 0 started with the value 1.
+
+What value is left in register 0 when this new background process halts?
+
 */
 
 namespace Day19
@@ -108,7 +117,8 @@ namespace Day19
 
             if (part1)
             {
-                RunProgram();
+                //RunProgram();
+                RunPart2(0, 0);
                 var result1 = GetRegister(0);
                 Console.WriteLine($"Day19 : Result1 {result1}");
                 var expected = 1922;
@@ -119,9 +129,11 @@ namespace Day19
             }
             else
             {
-                var result2 = -123;
+                // TOO HIGH: 123276832
+                RunPart2(0, 1);
+                var result2 = GetRegister(0);
                 Console.WriteLine($"Day19 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 123276832;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -129,7 +141,7 @@ namespace Day19
             }
         }
 
-        private static int Instruction_addr(int A, int B, int C)
+        private static int Instruction_addr(int A, int B)
         {
             // addr(add register) stores into register C the result of adding register A and register B.
             var valueA = sRegisters[A];
@@ -138,7 +150,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_addi(int A, int B, int C)
+        private static int Instruction_addi(int A, int B)
         {
             // addi(add immediate) stores into register C the result of adding register A and value B.
             var valueA = sRegisters[A];
@@ -147,7 +159,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_mulr(int A, int B, int C)
+        private static int Instruction_mulr(int A, int B)
         {
             // mulr(multiply register) stores into register C the result of multiplying register A and register B.
             var valueA = sRegisters[A];
@@ -156,7 +168,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_muli(int A, int B, int C)
+        private static int Instruction_muli(int A, int B)
         {
             // muli(multiply immediate) stores into register C the result of multiplying register A and value B.
             var valueA = sRegisters[A];
@@ -165,7 +177,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_banr(int A, int B, int C)
+        private static int Instruction_banr(int A, int B)
         {
             // banr(bitwise AND register) stores into register C the result of the bitwise AND of register A and register B.
             var valueA = sRegisters[A];
@@ -174,7 +186,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_bani(int A, int B, int C)
+        private static int Instruction_bani(int A, int B)
         {
             // bani(bitwise AND immediate) stores into register C the result of the bitwise AND of register A and value B.
             var valueA = sRegisters[A];
@@ -183,7 +195,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_borr(int A, int B, int C)
+        private static int Instruction_borr(int A, int B)
         {
             // borr (bitwise OR register) stores into register C the result of the bitwise OR of register A and register B.
             var valueA = sRegisters[A];
@@ -192,7 +204,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_bori(int A, int B, int C)
+        private static int Instruction_bori(int A, int B)
         {
             // bori (bitwise OR immediate) stores into register C the result of the bitwise OR of register A and value B.
             var valueA = sRegisters[A];
@@ -201,7 +213,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_setr(int A, int _, int C)
+        private static int Instruction_setr(int A, int _)
         {
             // setr (set register) copies the contents of register A into register C. (Input B is ignored.)
             var valueA = sRegisters[A];
@@ -209,7 +221,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_seti(int A, int _, int C)
+        private static int Instruction_seti(int A, int _)
         {
             // seti(set immediate) stores value A into register C. (Input B is ignored.)
             var valueA = A;
@@ -217,7 +229,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_gtir(int A, int B, int C)
+        private static int Instruction_gtir(int A, int B)
         {
             // gtir(greater-than immediate/register) sets register C to 1 if value A is greater than register B. Otherwise, register C is set to 0.
             var valueA = A;
@@ -226,7 +238,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_gtri(int A, int B, int C)
+        private static int Instruction_gtri(int A, int B)
         {
             // gtri (greater-than register/immediate) sets register C to 1 if register A is greater than value B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
@@ -235,7 +247,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_gtrr(int A, int B, int C)
+        private static int Instruction_gtrr(int A, int B)
         {
             // gtrr (greater-than register/register) sets register C to 1 if register A is greater than register B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
@@ -244,7 +256,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_eqir(int A, int B, int C)
+        private static int Instruction_eqir(int A, int B)
         {
             // eqir (equal immediate/register) sets register C to 1 if value A is equal to register B. Otherwise, register C is set to 0.
             var valueA = A;
@@ -253,7 +265,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_eqri(int A, int B, int C)
+        private static int Instruction_eqri(int A, int B)
         {
             // eqri (equal register/immediate) sets register C to 1 if register A is equal to value B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
@@ -262,7 +274,7 @@ namespace Day19
             return output;
         }
 
-        private static int Instruction_eqrr(int A, int B, int C)
+        private static int Instruction_eqrr(int A, int B)
         {
             // eqrr (equal register/register) sets register C to 1 if register A is equal to register B. Otherwise, register C is set to 0.
             var valueA = sRegisters[A];
@@ -284,22 +296,22 @@ namespace Day19
             }
             sRegisters[C] = instruction switch
             {
-                Instruction.addr => Instruction_addr(A, B, C),
-                Instruction.addi => Instruction_addi(A, B, C),
-                Instruction.mulr => Instruction_mulr(A, B, C),
-                Instruction.muli => Instruction_muli(A, B, C),
-                Instruction.banr => Instruction_banr(A, B, C),
-                Instruction.bani => Instruction_bani(A, B, C),
-                Instruction.borr => Instruction_borr(A, B, C),
-                Instruction.bori => Instruction_bori(A, B, C),
-                Instruction.setr => Instruction_setr(A, B, C),
-                Instruction.seti => Instruction_seti(A, B, C),
-                Instruction.gtir => Instruction_gtir(A, B, C),
-                Instruction.gtri => Instruction_gtri(A, B, C),
-                Instruction.gtrr => Instruction_gtrr(A, B, C),
-                Instruction.eqir => Instruction_eqir(A, B, C),
-                Instruction.eqri => Instruction_eqri(A, B, C),
-                Instruction.eqrr => Instruction_eqrr(A, B, C),
+                Instruction.addr => Instruction_addr(A, B),
+                Instruction.addi => Instruction_addi(A, B),
+                Instruction.mulr => Instruction_mulr(A, B),
+                Instruction.muli => Instruction_muli(A, B),
+                Instruction.banr => Instruction_banr(A, B),
+                Instruction.bani => Instruction_bani(A, B),
+                Instruction.borr => Instruction_borr(A, B),
+                Instruction.bori => Instruction_bori(A, B),
+                Instruction.setr => Instruction_setr(A, B),
+                Instruction.seti => Instruction_seti(A, B),
+                Instruction.gtir => Instruction_gtir(A, B),
+                Instruction.gtri => Instruction_gtri(A, B),
+                Instruction.gtrr => Instruction_gtrr(A, B),
+                Instruction.eqir => Instruction_eqir(A, B),
+                Instruction.eqri => Instruction_eqri(A, B),
+                Instruction.eqrr => Instruction_eqrr(A, B),
                 _ => throw new NotImplementedException()
             };
         }
@@ -382,6 +394,7 @@ namespace Day19
                 pc = sRegisters[sPCregister];
                 ++pc;
             }
+            //Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
         }
 
         public static int GetRegister(int register)
@@ -395,6 +408,207 @@ namespace Day19
             _ = new Program("Day19/input.txt", true);
             _ = new Program("Day19/input.txt", false);
             Console.WriteLine("Day19 : End");
+        }
+
+        private static int SumOfFactors(int value)
+        {
+            var total = 0;
+            for (var i = 1; i <= Math.Sqrt(value); ++i)
+            {
+                var j = value / i;
+                if (j * i == value)
+                {
+                    total += i;
+                    if (j != i)
+                    {
+                        total += j;
+                    }
+                }
+            }
+            return total;
+        }
+
+        private static void RunPart2(int register, int value)
+        {
+            for (var r = 0; r < MAX_NUM_REGISTERS; ++r)
+            {
+                sRegisters[r] = 0;
+            }
+            sRegisters[register] = value;
+
+            int pc;
+
+            //  0 : addi 4 16 4
+            pc = 0 + 16 + 1;
+            goto label_17;
+
+        label_1:
+            //Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
+            //  1 : seti 1 8 1
+            sRegisters[1] = 1;
+            sRegisters[0] = SumOfFactors(sRegisters[2]);
+            return;
+
+        label_2:
+            //  2 : seti 1 3 5
+            sRegisters[5] = 1;
+
+        label_3:
+            //  3 : mulr 1 5 3
+            sRegisters[3] = sRegisters[1] * sRegisters[5];
+
+            //  4 : eqrr 3 2 3
+            sRegisters[3] = sRegisters[3] == sRegisters[2] ? 1 : 0;
+
+            //  5 : addr 3 4 4
+            pc = sRegisters[3] + 5 + 1;
+            if (pc == 7)
+                goto label_7;
+            else if (pc == 6)
+                goto label_6;
+            else
+                throw new NotImplementedException($"pc {pc}");
+
+            label_6:
+            //  6 : addi 4 1 4
+            pc = 6 + 1 + 1;
+            goto label_8;
+
+        label_7:
+            //  7 : addr 1 0 0
+            sRegisters[0] = sRegisters[1] + sRegisters[0];
+
+        label_8:
+            //  8 : addi 5 1 5
+            sRegisters[5] = sRegisters[5] + 1;
+
+            //  9 : gtrr 5 2 3
+            sRegisters[3] = sRegisters[5] > sRegisters[2] ? 1 : 0;
+
+            // 10 : addr 4 3 4
+            pc = 10 + sRegisters[3] + 1;
+            if (pc == 12)
+                goto label_12;
+            else if (pc == 11)
+                goto label_11;
+            else
+                throw new NotImplementedException($"pc {pc}");
+
+            label_11:
+            // 11 : seti 2 2 4
+            pc = 2 + 1;
+            goto label_3;
+
+        label_12:
+            // 12 : addi 1 1 1
+            sRegisters[1] = sRegisters[1] + 1;
+
+            // 13 : gtrr 1 2 3
+            sRegisters[3] = sRegisters[1] > sRegisters[2] ? 1 : 0;
+
+            //Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
+            // 14 : addr 3 4 4
+            pc = sRegisters[3] + 14 + 1;
+            if (pc == 16)
+                goto label_16;
+            else if (pc == 15)
+                goto label_15;
+            else
+                throw new NotImplementedException($"pc {pc}");
+
+            label_15:
+            // 15 : seti 1 4 4
+            pc = 1 + 1;
+            goto label_2;
+
+        label_16:
+            // 16 : mulr 4 4 4
+            pc = 16 * 16 + 1;
+            goto label_257;
+
+        label_17:
+            // 17 : addi 2 2 2
+            sRegisters[2] = sRegisters[2] + 2;
+            sRegisters[2] = 2;
+
+            // 18 : mulr 2 2 2
+            sRegisters[2] = sRegisters[2] * sRegisters[2];
+            sRegisters[2] = 4;
+
+            // 19 : mulr 4 2 2
+            sRegisters[2] = 19 * sRegisters[2];
+            sRegisters[2] = 19 * 4;
+
+            // 20 : muli 2 11 2
+            sRegisters[2] = sRegisters[2] * 11;
+            sRegisters[2] = 19 * 4 * 11;
+
+            // 21 : addi 3 6 3
+            sRegisters[3] = sRegisters[3] + 6;
+            sRegisters[3] = 6;
+
+            // 22 : mulr 3 4 3
+            sRegisters[3] = sRegisters[3] * 22;
+            sRegisters[3] = 6 * 22;
+
+            // 23 : addi 3 8 3
+            sRegisters[3] = sRegisters[3] + 8;
+            sRegisters[3] = 6 * 22 + 8;
+
+            // 24 : addr 2 3 2
+            sRegisters[2] = sRegisters[2] + sRegisters[3];
+            sRegisters[2] = 19 * 4 * 11 + 6 * 22 + 8;
+
+            // 25 : addr 4 0 4
+            pc = 25 + sRegisters[0] + 1;
+            if (pc == 26)
+                goto label_26;
+            else if (pc == 27)
+                goto label_27;
+            else
+                throw new NotImplementedException($"pc {pc}");
+
+            label_26:
+            // 26 : seti 0 1 4
+            pc = sRegisters[0] + 1;
+            if (pc == 1)
+                goto label_1;
+            else if (pc == 2)
+                goto label_2;
+            else
+                throw new NotImplementedException($"pc {pc}");
+
+            label_27:
+            // 27 : setr 4 4 3
+            sRegisters[3] = 27 + sRegisters[3];
+
+            // 28 : mulr 3 4 3
+            sRegisters[3] = sRegisters[3] * 28;
+
+            // 29 : addr 4 3 3
+            sRegisters[3] = 29 + sRegisters[3];
+
+            // 30 : mulr 4 3 3
+            sRegisters[3] = 30 * sRegisters[3];
+
+            // 31 : muli 3 14 3
+            sRegisters[3] = sRegisters[3] * 14;
+
+            // 32 : mulr 3 4 3
+            sRegisters[3] = sRegisters[3] * 32;
+
+            // 33 : addr 2 3 2
+            sRegisters[2] = sRegisters[2] + sRegisters[3];
+
+            // 34 : seti 0 4 0
+            sRegisters[0] = 0;
+
+            // 35 : seti 0 7 4
+            pc = 0 + 1;
+            goto label_1;
+
+        label_257:
+            return;
         }
     }
 }
