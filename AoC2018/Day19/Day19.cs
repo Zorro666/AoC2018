@@ -129,11 +129,10 @@ namespace Day19
             }
             else
             {
-                // TOO HIGH: 123276832
                 RunPart2(0, 1);
                 var result2 = GetRegister(0);
                 Console.WriteLine($"Day19 : Result2 {result2}");
-                var expected = 123276832;
+                var expected = 22302144;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -450,6 +449,10 @@ namespace Day19
             return;
 
         label_2:
+            if (sRegisters[1] % 1000 == 0)
+            {
+                Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
+            }
             //  2 : seti 1 3 5
             sRegisters[5] = 1;
 
@@ -580,7 +583,7 @@ namespace Day19
 
             label_27:
             // 27 : setr 4 4 3
-            sRegisters[3] = 27 + sRegisters[3];
+            sRegisters[3] = 27;
 
             // 28 : mulr 3 4 3
             sRegisters[3] = sRegisters[3] * 28;
