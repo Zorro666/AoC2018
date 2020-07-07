@@ -171,6 +171,14 @@ namespace Day20
 {
     class Program
     {
+        const int MAX_MAP_SIZE = 2048;
+        const int sOriginX = MAX_MAP_SIZE / 2;
+        const int sOriginY = MAX_MAP_SIZE / 2;
+
+        private static readonly char[,] sMap = new char[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        private static int sCurrentX;
+        private static int sCurrentY;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
@@ -198,9 +206,177 @@ namespace Day20
             }
         }
 
-        public static void GenerateMap(string regexp)
+        private static void ClearMap()
         {
-            throw new NotImplementedException();
+            for (var y = 0; y < MAX_MAP_SIZE; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_SIZE; ++x)
+                {
+                    sMap[x, y] = '?';
+                }
+            }
+        }
+
+        private static void Move(string movement)
+        {
+            foreach (var c in movement)
+            {
+                var doorX = sCurrentX;
+                var doorY = sCurrentY;
+                var door = '?';
+                if (c == 'N')
+                {
+                    door = '-';
+                    doorY = sCurrentY - 1;
+                    sCurrentY -= 2;
+                }
+                else if (c == 'S')
+                {
+                    door = '-';
+                    doorY = sCurrentY + 1;
+                    sCurrentY += 2;
+                }
+                else if (c == 'W')
+                {
+                    door = '|';
+                    doorX = sCurrentX - 1;
+                    sCurrentX -= 2;
+                }
+                else if (c == 'E')
+                {
+                    door = '|';
+                    doorX = sCurrentX + 1;
+                    sCurrentX += 2;
+                }
+                else
+                {
+                    throw new InvalidProgramException($"Invalid movement character '{c}'");
+                }
+
+                sMap[sCurrentX, sCurrentY] = '.';
+                sMap[doorX, doorY] = door;
+
+                if (door == '|')
+                {
+                    sMap[doorX, doorY - 1] = '#';
+                    sMap[doorX, doorY + 1] = '#';
+                }
+                else if (door == '-')
+                {
+                    sMap[doorX - 1, doorY] = '#';
+                    sMap[doorX + 1, doorY] = '#';
+                }
+                else
+                {
+                    throw new InvalidProgramException($"Invalid door character '{door}'");
+                }
+            }
+        }
+
+        private static void FillInWalls()
+        {
+            var minX = int.MaxValue;
+            var maxX = int.MinValue;
+            var minY = int.MaxValue;
+            var maxY = int.MinValue;
+
+            for (var y = 0; y < MAX_MAP_SIZE; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_SIZE; ++x)
+                {
+                    if (sMap[x, y] != '?')
+                    {
+                        minX = Math.Min(minX, x);
+                        maxX = Math.Max(maxX, x);
+                        minY = Math.Min(minY, y);
+                        maxY = Math.Max(maxY, y);
+                    }
+                }
+            }
+            for (var y = minY; y <= maxY; ++y)
+            {
+                for (var x = minX; x <= maxX; ++x)
+                {
+                    if ((sMap[x, y] == '.') || (sMap[x, y] == '|') || (sMap[x, y] == '-') || (sMap[x, y] == 'X'))
+                    {
+                        for (var y2 = y - 1; y2 <= y + 1; ++y2)
+                        {
+                            for (var x2 = x - 1; x2 <= x + 1; ++x2)
+                            {
+                                if (sMap[x2, y2] == '?')
+                                {
+                                    sMap[x2, y2] = '#';
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void GenerateMap(string line)
+        {
+            if (line[0] != '^')
+            {
+                throw new InvalidProgramException($"Invalid regexp first character '{line[0]}' expected '^'");
+            }
+
+            if (line[^1] != '$')
+            {
+                throw new InvalidProgramException($"Invalid regexp last character '{line[^1]}' expected '$'");
+            }
+            var regexp = line[1..^1];
+
+            ClearMap();
+
+            sCurrentX = sOriginX;
+            sCurrentY = sOriginY;
+            sMap[sCurrentX, sCurrentY] = 'X';
+            // '(' : start sequence / set of options
+            // ')' : end sequence / set of options
+            // '|' : an optional branch
+            var movement = "";
+            for (var i = 0; i < regexp.Length; ++i)
+            {
+                var c = regexp[i];
+                if (c == '(')
+                {
+                    //StartNewSequence();
+                    // increase stack depth
+                }
+                else if (c == ')')
+                {
+                    //EndCurrentSequence();
+                    // decrease stack depth
+                }
+                else if (c == '|')
+                {
+                    //StartBranch();
+                    // finish current branch
+                }
+                else if (c == 'N')
+                {
+                    movement += c;
+                }
+                else if (c == 'S')
+                {
+                    movement += c;
+                }
+                else if (c == 'W')
+                {
+                    movement += c;
+                }
+                else if (c == 'E')
+                {
+                    movement += c;
+                }
+                else
+                {
+                    throw new InvalidProgramException($"Unknown character '{c}'");
+                }
+            }
+            Move(movement);
+            FillInWalls();
         }
 
         public static int FurthestRoom()
@@ -210,7 +386,39 @@ namespace Day20
 
         public static string[] GetMap()
         {
-            throw new NotImplementedException();
+            var minX = int.MaxValue;
+            var maxX = int.MinValue;
+            var minY = int.MaxValue;
+            var maxY = int.MinValue;
+
+            for (var y = 0; y < MAX_MAP_SIZE; ++y)
+            {
+                for (var x = 0; x < MAX_MAP_SIZE; ++x)
+                {
+                    if (sMap[x, y] == '#')
+                    {
+                        minX = Math.Min(minX, x);
+                        maxX = Math.Max(maxX, x);
+                        minY = Math.Min(minY, y);
+                        maxY = Math.Max(maxY, y);
+                    }
+                }
+            }
+            var height = maxY - minY + 1;
+            var output = new string[height];
+            var i = 0;
+            for (var y = minY; y <= maxY; ++y)
+            {
+                var line = "";
+                for (var x = minX; x <= maxX; ++x)
+                {
+                    line += sMap[x, y];
+                }
+                output[i] = line;
+                Console.WriteLine(line);
+                ++i;
+            }
+            return output;
         }
 
         public static void Run()
