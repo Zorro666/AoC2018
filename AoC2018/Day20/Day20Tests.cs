@@ -72,6 +72,7 @@ namespace Day20
         public void GenerateMap(string regexp, string[] expected)
         {
             Program.GenerateMap(regexp);
+            Program.OutputMap();
             Assert.That(Program.GetMap(), Is.EqualTo(expected));
         }
 
@@ -83,6 +84,7 @@ namespace Day20
         public void FurthestRoom(string regexp, int expected)
         {
             Program.GenerateMap(regexp);
+            Program.OutputMap();
             Assert.That(Program.FurthestRoom(), Is.EqualTo(expected));
         }
     }
