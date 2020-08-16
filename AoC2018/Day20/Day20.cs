@@ -214,9 +214,9 @@ namespace Day20
             }
             else
             {
-                var result2 = -123;
+                var result2 = AtLeastNDoorsRooms(1000);
                 Console.WriteLine($"Day20 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 8547;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -554,6 +554,19 @@ namespace Day20
                 maxDistance = Math.Max(maxDistance, r.distance);
             }
             return maxDistance;
+        }
+
+        private static int AtLeastNDoorsRooms(int countDoors)
+        {
+            var countRooms = 0;
+            foreach (var r in sVisitedRooms)
+            {
+                if (r.distance >= countDoors)
+                {
+                    ++countRooms;
+                }
+            }
+            return countRooms;
         }
 
         public static void OutputMap()
