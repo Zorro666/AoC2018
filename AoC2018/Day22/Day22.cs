@@ -94,14 +94,22 @@ namespace Day22
 {
     class Program
     {
+        const int MAX_MAP_SIZE = 1024;
+        readonly private static int[,] sErosion = new int[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        private static int sDepth;
+        private static int sTargetX;
+        private static int sTargetY;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            Parse(lines);
+
             if (part1)
             {
-                long result1 = -666;
+                var result1 = RiskLevel();
                 Console.WriteLine($"Day22 : Result1 {result1}");
-                long expected = 280;
+                var expected = 5637;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -109,9 +117,9 @@ namespace Day22
             }
             else
             {
-                long result2 = -123;
+                var result2 = -123;
                 Console.WriteLine($"Day22 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -121,12 +129,77 @@ namespace Day22
 
         public static void Parse(string[] lines)
         {
-            throw new NotImplementedException();
+            // "depth: 510",
+            // "target: 10, 10"
+            if (lines.Length != 2)
+            {
+                throw new InvalidProgramException($"Expected 2 lines of input got {lines.Length}");
+            }
+            if (!lines[0].StartsWith("depth: "))
+            {
+                throw new InvalidProgramException($"Expected first line to start with 'depth: ' line:'{lines[0]}'");
+            }
+            if (!lines[1].StartsWith("target: "))
+            {
+                throw new InvalidProgramException($"Expected second line to start with 'target: ' line:'{lines[1]}'");
+            }
+            sDepth = int.Parse(lines[0].Substring("depth: ".Length));
+            var tokens = lines[1].Substring("target: ".Length).Split(',');
+            sTargetX = int.Parse(tokens[0]);
+            sTargetY = int.Parse(tokens[1]);
+
+            Console.WriteLine($"Depth: {sDepth}");
+            Console.WriteLine($"Target: {sTargetX},{sTargetY}");
         }
 
         public static int RiskLevel()
         {
-            throw new NotImplementedException();
+            var mapSize = Math.Max(sTargetX, sTargetY);
+            mapSize += 10;
+            for (var y = 0; y < mapSize; ++y)
+            {
+                for (var x = 0; x < mapSize; ++x)
+                {
+                    // The region at the coordinates of the target has a geologic index of 0.
+                    // If the region's Y coordinate is 0, the geologic index is its X coordinate times 16807.
+                    // If the region's X coordinate is 0, the geologic index is its Y coordinate times 48271.
+                    // Otherwise, the region's geologic index is the result of multiplying the erosion levels of the regions at X-1,Y and X,Y-1.
+                    // A region's erosion level is its geologic index plus the cave system's depth, all modulo 20183.
+                    int geologicIndex;
+                    if (y == 0)
+                    {
+                        geologicIndex = x * 16807;
+                    }
+                    else if (x == 0)
+                    {
+                        geologicIndex = y * 48271;
+                    }
+                    else if ((x == sTargetX) && (y == sTargetY))
+                    {
+                        geologicIndex = 0;
+                    }
+                    else
+                    {
+                        geologicIndex = sErosion[x - 1, y] * sErosion[x, y - 1];
+                    }
+                    var erosionLevel = (geologicIndex + sDepth) % 20183;
+                    sErosion[x, y] = erosionLevel;
+                }
+            }
+
+            // For the rectangle that has a top-left corner of region 0,0 and a bottom-right corner of the region containing the target, add up the risk level of each individual region: 0 for rocky regions, 1 for wet regions, and 2 for narrow regions.
+            // If the erosion level modulo 3 is 0, the region's type is rocky.
+            // If the erosion level modulo 3 is 1, the region's type is wet.
+            // If the erosion level modulo 3 is 2, the region's type is narrow.
+            var riskLevel = 0;
+            for (var y = 0; y <= sTargetY; ++y)
+            {
+                for (var x = 0; x <= sTargetX; ++x)
+                {
+                    riskLevel += sErosion[x, y] % 3;
+                }
+            }
+            return riskLevel;
         }
 
         public static void Run()
