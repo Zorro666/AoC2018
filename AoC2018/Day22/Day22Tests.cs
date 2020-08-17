@@ -6,10 +6,14 @@ namespace Day22
     public class Tests
     {
         [Test]
-        [TestCase("", -3)]
-        public void Day22(string directions, int expected)
+        [TestCase(new string[] {
+"depth: 510",
+"target: 10, 10"
+        }, 114, TestName = "RiskLevel A = 114")]
+        public void Risklevel(string[] input, int expected)
         {
-            Assert.Fail();
+            Program.Parse(input);
+            Assert.That(Program.RiskLevel(), Is.EqualTo(expected));
         }
     }
 }
