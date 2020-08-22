@@ -379,14 +379,19 @@ namespace Day21
             var lastNewValue = int.MaxValue;
             var countLoops = 0;
             sRegisters[0] = reg0;
+            goto Instruction_0;
         //goto Instruction_5;
         //#ip 1
         //  0: seti 123 0 4
         Instruction_0: sRegisters[4] = 123;
+            goto Instruction_1;
         //  1: bani 4 456 4
         Instruction_1: sRegisters[4] = sRegisters[4] & 456;
+            goto Instruction_2;
+        //  1: bani 4 456 4
         //  2: eqri 4 72 4
         Instruction_2: //sRegisters[4] = (sRegisters[4] == 72) ? 1 : 0;
+            goto Instruction_3;
         //  3: addr 4 1 1
         Instruction_3: //sRegisters[1] = sRegisters[4] + 3; // sRegisters[1];
             if (sRegisters[4] == 72)
@@ -406,20 +411,28 @@ namespace Day21
         Instruction_5: sRegisters[4] = 0;
         //  6: bori 4 65536 3
         Instruction_6: sRegisters[3] = sRegisters[4] | 65536;
-        //  7: seti 12670166 8 4
+            //  7: seti 12670166 8 4
+            goto Instruction_7;
         Instruction_7: sRegisters[4] = 12670166;
-        //  8: bani 3 255 2
+            //  8: bani 3 255 2
+            goto Instruction_8;
         Instruction_8: sRegisters[2] = sRegisters[3] & 255;
-        //  9: addr 4 2 4
+            //  9: addr 4 2 4
+            goto Instruction_9;
         Instruction_9: sRegisters[4] = sRegisters[4] + sRegisters[2];
-        // 10: bani 4 16777215 4
+            // 10: bani 4 16777215 4
+            goto Instruction_10;
         Instruction_10: sRegisters[4] = 16777215 & sRegisters[4];
-        // 11: muli 4 65899 4
+            // 11: muli 4 65899 4
+            goto Instruction_11;
         Instruction_11: sRegisters[4] = 65899 * sRegisters[4];
-        // 12: bani 4 16777215 4
+            // 12: bani 4 16777215 4
+            goto Instruction_12;
         Instruction_12: sRegisters[4] = 16777215 & sRegisters[4];
-        // 13: gtir 256 3 2
+            // 13: gtir 256 3 2
+            goto Instruction_13;
         Instruction_13: sRegisters[2] = (256 > sRegisters[3]) ? 1 : 0;
+            goto Instruction_14;
         // 14: addr 2 1 1
         Instruction_14: sRegisters[1] = sRegisters[2] + 14; // sRegisters[1];
             if (256 > sRegisters[3])
@@ -440,10 +453,13 @@ namespace Day21
         Instruction_17: sRegisters[2] = 0;
         // 18: addi 2 1 5
         Instruction_18: sRegisters[5] = sRegisters[2] + 1;
+            goto Instruction_19;
         // 19: muli 5 256 5
         Instruction_19: sRegisters[5] = 256 * sRegisters[5];
+            goto Instruction_20;
         // 20: gtrr 5 3 5
         Instruction_20: //sRegisters[5] = (sRegisters[5] > sRegisters[3]) ? 1 : 0;
+            goto Instruction_21;
         // 21: addr 5 1 1
         Instruction_21: //sRegisters[1] = sRegisters[5] + sRegisters[1];
             if (sRegisters[5] > sRegisters[3])
@@ -463,16 +479,19 @@ namespace Day21
             goto Instruction_26;
         // 24: addi 2 1 2
         Instruction_24: sRegisters[2] = sRegisters[2] + 1;
+            goto Instruction_25;
         // 25: seti 17 8 1
         Instruction_25: sRegisters[1] = 17;
             goto Instruction_18;
         // 26: setr 2 5 3
         Instruction_26: sRegisters[3] = sRegisters[2];
+            goto Instruction_27;
         // 27: seti 7 2 1
         Instruction_27: sRegisters[1] = 7;
             goto Instruction_8;
         // 28: eqrr 4 0 2
         Instruction_28: sRegisters[2] = (sRegisters[4] == sRegisters[0]) ? 1 : 0;
+            goto Instruction_29;
         // 29: addr 2 1 1
         Instruction_29: sRegisters[1] = sRegisters[2] + 29; // sRegisters[1];
             if (sRegisters[4] == sRegisters[0])
