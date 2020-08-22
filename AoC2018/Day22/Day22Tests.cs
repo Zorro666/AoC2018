@@ -15,5 +15,16 @@ namespace Day22
             Program.Parse(input);
             Assert.That(Program.RiskLevel(), Is.EqualTo(expected));
         }
+
+        [Test]
+        [TestCase(new string[] {
+"depth: 510",
+"target: 10, 10"
+        }, 45, TestName = "ShortestTime A = 45")]
+        public void ShortestTime(string[] input, int expected)
+        {
+            Program.Parse(input);
+            Assert.That(Program.ShortestTime(), Is.EqualTo(expected));
+        }
     }
 }

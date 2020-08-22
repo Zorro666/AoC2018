@@ -389,11 +389,29 @@ namespace Day22
 {
     class Program
     {
+        public struct Node
+        {
+            public int x;
+            public int y;
+            public int time;
+            public int torch;
+            public int climbingGear;
+        };
+
         const int MAX_MAP_SIZE = 1024;
+        const int MAX_COUNT_NODES = 2 * MAX_MAP_SIZE * MAX_MAP_SIZE;
+        const int SWITCH_GEAR_TIME = 7;
+        const int MOVE_TIME = 1;
         readonly private static int[,] sErosion = new int[MAX_MAP_SIZE, MAX_MAP_SIZE];
+        readonly private static int[,,,] sVisited = new int[2, 2, MAX_MAP_SIZE, MAX_MAP_SIZE];
+        readonly private static Node[] sNodes = new Node[MAX_COUNT_NODES];
+        private static int sWidth;
+        private static int sHeight;
         private static int sDepth;
         private static int sTargetX;
         private static int sTargetY;
+        private static int sNodeStart;
+        private static int sNodeCount;
 
         private Program(string inputFile, bool part1)
         {
@@ -412,9 +430,9 @@ namespace Day22
             }
             else
             {
-                var result2 = -123;
+                var result2 = ShortestTime();
                 Console.WriteLine($"Day22 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 969;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -447,13 +465,13 @@ namespace Day22
             Console.WriteLine($"Target: {sTargetX},{sTargetY}");
         }
 
-        public static int RiskLevel()
+        private static void ComputeErosionMap(int width, int height)
         {
-            var mapSize = Math.Max(sTargetX, sTargetY);
-            mapSize += 10;
-            for (var y = 0; y < mapSize; ++y)
+            sWidth = width;
+            sHeight = height;
+            for (var y = 0; y < sHeight; ++y)
             {
-                for (var x = 0; x < mapSize; ++x)
+                for (var x = 0; x < sWidth; ++x)
                 {
                     // The region at the coordinates of the target has a geologic index of 0.
                     // If the region's Y coordinate is 0, the geologic index is its X coordinate times 16807.
@@ -481,6 +499,236 @@ namespace Day22
                     sErosion[x, y] = erosionLevel;
                 }
             }
+        }
+
+        private static int TimeToMove(ref int torch, ref int climbingGear, int fromX, int fromY, int toX, int toY)
+        {
+            var deltaTime = MOVE_TIME;
+            var currentCellType = sErosion[fromX, fromY] % 3;
+            var newCellType = sErosion[toX, toY] % 3;
+
+            // The start is always in a rocky region
+            if ((fromX == 0) && (fromY == 0))
+            {
+                currentCellType = 0;
+            }
+            if ((toX == 0) && (toY == 0))
+            {
+                newCellType = 0;
+            }
+
+            // The target is always in a rocky region
+            if ((toX == sTargetX) && (toY == sTargetY))
+            {
+                newCellType = 0;
+            }
+
+            if (newCellType != currentCellType)
+            {
+                var needTorch = 0;
+                var needClimbingGear = 0;
+                // 0, the region's type is rocky.
+                // In rocky regions, you can use the climbing gear or the torch.
+                // You cannot use neither (you'll likely slip and fall).
+                // 1, the region's type is wet.
+                // In wet regions, you can use the climbing gear or neither tool.
+                // You cannot use the torch (if it gets wet, you won't have a light source).
+                // 2, the region's type is narrow.
+                // In narrow regions, you can use the torch or neither tool.
+                // You cannot use the climbing gear (it's too bulky to fit).
+                if (newCellType == 0)
+                {
+                    if (currentCellType == 1)
+                    {
+                        needTorch = 0;
+                        needClimbingGear = 1;
+                    }
+                    else if (currentCellType == 2)
+                    {
+                        needTorch = 1;
+                        needClimbingGear = 0;
+                    }
+                }
+                else if (newCellType == 1)
+                {
+                    if (currentCellType == 0)
+                    {
+                        needTorch = 0;
+                        needClimbingGear = 1;
+                    }
+                    else if (currentCellType == 2)
+                    {
+                        needTorch = 0;
+                        needClimbingGear = 0;
+                    }
+                }
+                else if (newCellType == 2)
+                {
+                    if (currentCellType == 0)
+                    {
+                        needTorch = 1;
+                        needClimbingGear = 0;
+                    }
+                    else if (currentCellType == 1)
+                    {
+                        needTorch = 0;
+                        needClimbingGear = 0;
+                    }
+                }
+
+                if ((needTorch == 1) && (needClimbingGear == 1))
+                {
+                    throw new InvalidProgramException($"Trying to equip both items at the same time");
+                }
+                else if ((needTorch != torch) || (needClimbingGear != climbingGear))
+                {
+                    deltaTime += SWITCH_GEAR_TIME;
+                    torch = needTorch;
+                    climbingGear = needClimbingGear;
+                }
+            }
+            return deltaTime;
+        }
+
+        public static int FirstRoute()
+        {
+            var totalTime = 0;
+            var x = 0;
+            var y = 0;
+            var torch = 1;
+            var climbingGear = 0;
+            while ((x != sTargetX) || (y != sTargetY))
+            {
+                var newX = x;
+                var newY = y;
+                if (sTargetY > y)
+                {
+                    newY = y + 1;
+                }
+                else if (sTargetX > x)
+                {
+                    newX = x + 1;
+                }
+
+                totalTime += TimeToMove(ref torch, ref climbingGear, x, y, newX, newY);
+                x = newX;
+                y = newY;
+            }
+
+            // Finally, once you reach the target, you need the torch equipped before you can find him in the dark.
+            if (torch == 0)
+            {
+                totalTime += SWITCH_GEAR_TIME;
+            }
+
+            return totalTime;
+        }
+
+        private static void AddNode(int fromX, int fromY, int toX, int toY, int time, int torch, int climbingGear, int minTime)
+        {
+            var newTorch = torch;
+            var newClimbingGear = climbingGear;
+            var newTime = time + TimeToMove(ref newTorch, ref newClimbingGear, fromX, fromY, toX, toY);
+            if (newTime <= minTime)
+            {
+                sNodes[sNodeCount] = new Node { x = toX, y = toY, time = newTime, torch = newTorch, climbingGear = newClimbingGear };
+                ++sNodeCount;
+                if (sNodeCount == MAX_COUNT_NODES)
+                {
+                    sNodeCount = 0;
+                }
+                if (sNodeCount == sNodeStart)
+                {
+                    throw new InvalidProgramException($"Count {sNodeCount} == Start {sNodeStart}");
+                }
+            }
+        }
+
+        private static void FindQuickestRoute(ref int minTime)
+        {
+            sNodeStart = 0;
+            sNodeCount = 0;
+            sNodes[sNodeCount] = new Node { x = 0, y = 0, time = 0, torch = 1, climbingGear = 0 };
+            ++sNodeCount;
+            while (sNodeStart != sNodeCount)
+            {
+                var node = sNodes[sNodeStart];
+                ++sNodeStart;
+                if (sNodeStart == MAX_COUNT_NODES)
+                {
+                    sNodeStart = 0;
+                }
+                if (node.time > minTime)
+                {
+                    continue;
+                }
+                StepInRoute(node.x, node.y, node.time, ref minTime, node.torch, node.climbingGear);
+            }
+        }
+
+        private static void StepInRoute(int fromX, int fromY, int time, ref int minTime, int torch, int climbingGear)
+        {
+            if (sVisited[torch, climbingGear, fromX, fromY] <= time)
+            {
+                return;
+            }
+            if ((fromX == sTargetX) && (fromY == sTargetY))
+            {
+                if (torch == 0)
+                {
+                    time += SWITCH_GEAR_TIME;
+                }
+                minTime = Math.Min(time, minTime);
+            }
+            else
+            {
+                sVisited[torch, climbingGear, fromX, fromY] = time;
+                if (fromY < (sHeight - 1))
+                {
+                    AddNode(fromX, fromY, fromX + 0, fromY + 1, time, torch, climbingGear, minTime);
+                }
+                if (fromX < (sWidth - 1))
+                {
+                    AddNode(fromX, fromY, fromX + 1, fromY + 0, time, torch, climbingGear, minTime);
+                }
+                if (fromX > 0)
+                {
+                    AddNode(fromX, fromY, fromX - 1, fromY + 0, time, torch, climbingGear, minTime);
+                }
+                if (fromY > 0)
+                {
+                    AddNode(fromX, fromY, fromX + 0, fromY - 1, time, torch, climbingGear, minTime);
+                }
+            }
+        }
+
+        public static int ShortestTime()
+        {
+            var width = sTargetX + 100;
+            var height = sTargetY + 100;
+            ComputeErosionMap(width, height);
+            for (var y = 0; y < sHeight; ++y)
+            {
+                for (var x = 0; x < sWidth; ++x)
+                {
+                    sVisited[0, 0, x, y] = int.MaxValue;
+                    sVisited[0, 1, x, y] = int.MaxValue;
+                    sVisited[1, 0, x, y] = int.MaxValue;
+                    sVisited[1, 1, x, y] = int.MaxValue;
+                }
+            }
+
+            var minTime = FirstRoute();
+            FindQuickestRoute(ref minTime);
+
+            return minTime;
+        }
+
+        public static int RiskLevel()
+        {
+            var width = sTargetX + 10;
+            var height = sTargetY + 10;
+            ComputeErosionMap(width, height);
 
             // For the rectangle that has a top-left corner of region 0,0 and a bottom-right corner of the region containing the target, add up the risk level of each individual region: 0 for rocky regions, 1 for wet regions, and 2 for narrow regions.
             // If the erosion level modulo 3 is 0, the region's type is rocky.
@@ -499,7 +747,7 @@ namespace Day22
 
         public static void Run()
         {
-            Console.WriteLine("Day22 : Start");
+
             _ = new Program("Day22/input.txt", true);
             _ = new Program("Day22/input.txt", false);
             Console.WriteLine("Day22 : End");
