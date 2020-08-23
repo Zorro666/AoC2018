@@ -15,8 +15,8 @@ The armies repeatedly fight until only one army has units remaining.
 Units within a group all have the same hit points (amount of damage a unit can take before it is destroyed), attack damage (the amount of damage each unit deals), an attack type, an initiative (higher initiative units attack first and win ties), and sometimes weaknesses or immunities.
 Here is an example group:
 
-18 units each with 729 hit points (weak to fire; immune to cold, slashing)
- with an attack that does 8 radiation damage at initiative 10
+18 units each with 729 hit points (weak to fire; immune to cold, slashing) with an attack that does 8 radiation damage at initiative 10
+
 Each group also has an effective power: the number of units in that group multiplied by their attack damage.
 The above group has an effective power of 18 * 8 = 144.
 Groups never have zero or negative units; instead, the group is removed from combat.
@@ -49,16 +49,12 @@ After the fight is over, if both armies still contain units, a new fight begins;
 For example, consider the following armies:
 
 Immune System:
-17 units each with 5390 hit points (weak to radiation, bludgeoning) with
- an attack that does 4507 fire damage at initiative 2
-989 units each with 1274 hit points (immune to fire; weak to bludgeoning,
- slashing) with an attack that does 25 slashing damage at initiative 3
+17 units each with 5390 hit points (weak to radiation, bludgeoning) with an attack that does 4507 fire damage at initiative 2
+989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
 
 Infection:
-801 units each with 4706 hit points (weak to radiation) with an attack
- that does 116 bludgeoning damage at initiative 1
-4485 units each with 2961 hit points (immune to radiation; weak to fire,
- cold) with an attack that does 12 slashing damage at initiative 4
+801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
+4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4
 
 If these armies were to enter combat, the following fights, including details during the target selection and attacking phases, would take place:
 
@@ -181,14 +177,30 @@ namespace Day24
 {
     class Program
     {
+        const int MAX_COUNT_GROUPS = 128;
+        const int MAX_IMMUNE_WEAK_COUNT = 4;
+        readonly private static int[] sSide = new int[MAX_COUNT_GROUPS];
+        readonly private static int[] sHP = new int[MAX_COUNT_GROUPS];
+        readonly private static int[] sUnitCount = new int[MAX_COUNT_GROUPS];
+        readonly private static string[,] sWeakness = new string[MAX_COUNT_GROUPS, MAX_IMMUNE_WEAK_COUNT];
+        readonly private static int[] sWeaknessCount = new int[MAX_COUNT_GROUPS];
+        readonly private static string[,] sImmunity = new string[MAX_COUNT_GROUPS, MAX_IMMUNE_WEAK_COUNT];
+        readonly private static int[] sImmunityCount = new int[MAX_COUNT_GROUPS];
+        readonly private static int[] sAttackPower = new int[MAX_COUNT_GROUPS];
+        readonly private static string[] sAttackType = new string[MAX_COUNT_GROUPS];
+        readonly private static int[] sInitiative = new int[MAX_COUNT_GROUPS];
+        private static int sGroupCount;
+
         private Program(string inputFile, bool part1)
         {
             var lines = AoC.Program.ReadLines(inputFile);
+            Parse(lines);
+
             if (part1)
             {
-                long result1 = -666;
+                var result1 = WinningArmyUnits();
                 Console.WriteLine($"Day24 : Result1 {result1}");
-                long expected = 280;
+                var expected = 280;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -196,9 +208,9 @@ namespace Day24
             }
             else
             {
-                long result2 = -123;
+                var result2 = -123;
                 Console.WriteLine($"Day24 : Result2 {result2}");
-                long expected = 1797;
+                var expected = 1797;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -208,6 +220,167 @@ namespace Day24
 
         public static void Parse(string[] lines)
         {
+            sGroupCount = 0;
+            // Immune System:
+            // 17 units each with 5390 hit points (weak to radiation, bludgeoning) with an attack that does 4507 fire damage at initiative 2 989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
+            // 
+            // Infection:
+            // 801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
+            // 4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4
+            bool expectImmuneSystem = true;
+            bool expectInfection = false;
+            int side = -1;
+            foreach (var line in lines)
+            {
+                if (line == "Immune System:")
+                {
+                    if (!expectImmuneSystem || (side != -1))
+                    {
+                        throw new InvalidProgramException($"Bad line '{line}' was not expecting 'Immune System:'");
+                    }
+                    expectImmuneSystem = false;
+                    side = 0;
+                }
+                else if (line == "Infection:")
+                {
+                    if (!expectInfection || (side != -1))
+                    {
+                        throw new InvalidProgramException($"Bad line '{line}' was not expecting 'Infection:'");
+                    }
+                    expectInfection = false;
+                    side = 1;
+                }
+                else if (line == "")
+                {
+                    expectInfection = true;
+                    if (side != 0)
+                    {
+                        throw new InvalidProgramException($"Bad line '{line}' was not expecting a blank line");
+                    }
+                    side = -1;
+                }
+                else if (expectImmuneSystem || expectInfection || (side == -1))
+                {
+                    throw new InvalidProgramException($"Bad line '{line}' 'Immune System:' or 'Infection:' or ''");
+                }
+                else
+                {
+                    // 4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4
+                    var tokens = line.Trim().Split();
+                    if ((tokens[1] != "units") || (tokens[2] != "each") || (tokens[3] != "with") || (tokens[5] != "hit") || (tokens[6] != "points"))
+                    {
+                        throw new InvalidProgramException($"Bad line '{line}' Expected 'XXX units each with YYY hit points'");
+                    }
+                    var unitCount = int.Parse(tokens[0]);
+                    var hp = int.Parse(tokens[4]);
+                    var optionalTokens = line.Split(')');
+                    var attackToken = line.Substring(line.IndexOf("with an"));
+                    var weaknessCount = 0;
+                    var immunityCount = 0;
+                    if (optionalTokens.Length == 2)
+                    {
+                        var subTokens = optionalTokens[0].Trim().Split('(');
+                        if (subTokens.Length != 2)
+                        {
+                            throw new InvalidProgramException($"Bad line '{line}' Expected 2 '(' tokens got {subTokens.Length}");
+                        }
+                        // immune to AAA; weak to BBB, CCC
+                        // weak to AAA, BBB; immune to CCC, DDD
+                        var immuneWeakTokens = subTokens[1].Trim().Split(';');
+
+                        foreach (var immuneWeakToken in immuneWeakTokens)
+                        {
+                            var words = immuneWeakToken.Trim().Split();
+                            if (words.Length < 3)
+                            {
+                                throw new InvalidProgramException($"Bad line '{line}' Expected at least 3 tokens got {words.Length}");
+                            }
+                            if ((words[0] != "immune") && (words[0] != "weak"))
+                            {
+                                throw new InvalidProgramException($"Bad line '{line}' Expected 'immune' or 'weak' got {words[0]}");
+                            }
+                            if (words[1] != "to")
+                            {
+                                throw new InvalidProgramException($"Bad line '{line}' Expected 'to' got {words[1]}");
+                            }
+                            var immunity = false;
+                            if (words[0] == "immune")
+                            {
+                                immunity = true;
+                            }
+                            var powers = words[2..];
+                            var count = powers.Length;
+                            for (var p = 0; p < count; ++p)
+                            {
+                                var power = powers[p].TrimEnd(',');
+                                if (immunity)
+                                {
+                                    sImmunity[sGroupCount, p] = power;
+                                }
+                                else
+                                {
+                                    sWeakness[sGroupCount, p] = power;
+                                }
+                            }
+                            if (immunity)
+                            {
+                                immunityCount = count;
+                            }
+                            else
+                            {
+                                weaknessCount = count;
+                            }
+                        }
+
+                        attackToken = optionalTokens[1];
+                    }
+
+                    var attackTokens = attackToken.Trim().Split();
+
+                    // with an attack that does XXX YYY damage at initiative ZZZ
+                    if ((attackTokens[0] != "with") || (attackTokens[1] != "an") || (attackTokens[2] != "attack") || (attackTokens[3] != "that") ||
+                        (attackTokens[4] != "does") || (attackTokens[7] != "damage") || (attackTokens[8] != "at") || (attackTokens[9] != "initiative"))
+                    {
+                        throw new InvalidProgramException($"Bad line '{line}' Got '{tokens[1]}' Expected 'with an attack that does XXX YYY damage at initiative ZZZ'");
+                    }
+                    var attackPower = int.Parse(attackTokens[5]);
+                    var attackType = attackTokens[6].Trim();
+                    var initiative = int.Parse(attackTokens[10]);
+
+                    sSide[sGroupCount] = side;
+                    sUnitCount[sGroupCount] = unitCount;
+                    sHP[sGroupCount] = hp;
+                    sWeaknessCount[sGroupCount] = weaknessCount;
+                    sImmunityCount[sGroupCount] = immunityCount;
+                    sAttackPower[sGroupCount] = attackPower;
+                    sAttackType[sGroupCount] = attackType;
+                    sInitiative[sGroupCount] = initiative;
+                    ++sGroupCount;
+                }
+            }
+            for (var g = 0; g < sGroupCount; ++g)
+            {
+                Console.Write($"Group[{g}] Side:{sSide[g]} Units:{sUnitCount[g]} HP:{sHP[g]} ");
+                if (sWeaknessCount[g] > 0)
+                {
+                    Console.Write($"Weakness: ");
+                    for (var w = 0; w < sWeaknessCount[g]; ++w)
+                    {
+                        Console.Write($"'{sWeakness[g, w]}' ");
+                    }
+                }
+                if (sImmunityCount[g] > 0)
+                {
+                    Console.Write($"Immunity: ");
+                    for (var i = 0; i < sImmunityCount[g]; ++i)
+                    {
+                        Console.Write($"'{sImmunity[g, i]}' ");
+                    }
+                }
+                Console.Write($"Attack:{sAttackPower[g]} '{sAttackType[g]}' ");
+                Console.Write($"Initiative:{sInitiative[g]}");
+                Console.WriteLine($"");
+            }
             throw new NotImplementedException();
         }
 
