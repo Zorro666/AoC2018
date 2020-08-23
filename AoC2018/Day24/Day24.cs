@@ -177,7 +177,7 @@ namespace Day24
 {
     class Program
     {
-        const int MAX_COUNT_GROUPS = 128;
+        const int MAX_COUNT_GROUPS = 32;
         const int MAX_IMMUNE_WEAK_COUNT = 4;
         readonly private static int[] sSide = new int[MAX_COUNT_GROUPS];
         readonly private static int[] sHP = new int[MAX_COUNT_GROUPS];
@@ -186,9 +186,11 @@ namespace Day24
         readonly private static int[] sWeaknessCount = new int[MAX_COUNT_GROUPS];
         readonly private static string[,] sImmunity = new string[MAX_COUNT_GROUPS, MAX_IMMUNE_WEAK_COUNT];
         readonly private static int[] sImmunityCount = new int[MAX_COUNT_GROUPS];
+        readonly private static int[,] sAttackMultiplier = new int[MAX_COUNT_GROUPS, MAX_COUNT_GROUPS];
         readonly private static int[] sAttackPower = new int[MAX_COUNT_GROUPS];
         readonly private static string[] sAttackType = new string[MAX_COUNT_GROUPS];
         readonly private static int[] sInitiative = new int[MAX_COUNT_GROUPS];
+        readonly private static int[] sInitiativeOrder = new int[MAX_COUNT_GROUPS];
         private static int sGroupCount;
 
         private Program(string inputFile, bool part1)
@@ -200,7 +202,8 @@ namespace Day24
             {
                 var result1 = WinningArmyUnits();
                 Console.WriteLine($"Day24 : Result1 {result1}");
-                var expected = 280;
+                // 29150 : TOO HIGH
+                var expected = 29150;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -227,8 +230,8 @@ namespace Day24
             // Infection:
             // 801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
             // 4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4
-            bool expectImmuneSystem = true;
-            bool expectInfection = false;
+            var expectImmuneSystem = true;
+            var expectInfection = false;
             int side = -1;
             foreach (var line in lines)
             {
@@ -358,6 +361,67 @@ namespace Day24
                     ++sGroupCount;
                 }
             }
+            ComputeAttackMultiplier();
+            ComputeInitiativeOrder();
+            OutputGroups();
+        }
+
+        private static void ComputeInitiativeOrder()
+        {
+            var groupCount = sGroupCount;
+            for (var i = 0; i < groupCount; ++i)
+            {
+                sInitiativeOrder[i] = i;
+            }
+
+            for (var i = 0; i < sGroupCount - 1; ++i)
+            {
+                for (var j = i + 1; j < sGroupCount; ++j)
+                {
+                    var i1 = sInitiativeOrder[i];
+                    var i2 = sInitiativeOrder[j];
+                    var initiative1 = sInitiative[i1];
+                    var initiative2 = sInitiative[i2];
+                    if (initiative2 > initiative1)
+                    {
+                        sInitiativeOrder[j] = i1;
+                        sInitiativeOrder[i] = i2;
+                    }
+                }
+            }
+        }
+
+        private static void ComputeAttackMultiplier()
+        {
+            for (var a = 0; a < sGroupCount; ++a)
+            {
+                var attackType = sAttackType[a];
+                for (var d = 0; d < sGroupCount; ++d)
+                {
+                    var attackMultiplier = 1;
+                    for (var w = 0; w < sWeaknessCount[d]; ++w)
+                    {
+                        if (sWeakness[d, w] == attackType)
+                        {
+                            attackMultiplier = 2;
+                            break;
+                        }
+                    }
+                    for (var i = 0; i < sImmunityCount[d]; ++i)
+                    {
+                        if (sImmunity[d, i] == attackType)
+                        {
+                            attackMultiplier = 0;
+                            break;
+                        }
+                    }
+                    sAttackMultiplier[a, d] = attackMultiplier;
+                }
+            }
+        }
+
+        private static void OutputGroups()
+        {
             for (var g = 0; g < sGroupCount; ++g)
             {
                 Console.Write($"Group[{g}] Side:{sSide[g]} Units:{sUnitCount[g]} HP:{sHP[g]} ");
@@ -381,12 +445,180 @@ namespace Day24
                 Console.Write($"Initiative:{sInitiative[g]}");
                 Console.WriteLine($"");
             }
-            throw new NotImplementedException();
+        }
+
+
+        private static int ComputeDamage(int attacker, int defender)
+        {
+            if (defender < 0)
+            {
+                return 0;
+            }
+            var attackPower = sAttackPower[attacker] * sUnitCount[attacker];
+            var attackMultiplier = sAttackMultiplier[attacker, defender];
+            attackPower *= attackMultiplier;
+            return attackPower;
         }
 
         public static int WinningArmyUnits()
         {
-            throw new NotImplementedException();
+            var groupCount = sGroupCount;
+            var totalPerSide = new int[2];
+            do
+            {
+                Console.WriteLine($"Fight");
+                Fight();
+                totalPerSide[0] = 0;
+                totalPerSide[1] = 0;
+                for (var i = 0; i < groupCount; ++i)
+                {
+                    totalPerSide[sSide[i]] += sUnitCount[i];
+                }
+            }
+            while ((totalPerSide[0] > 0) && (totalPerSide[1] > 0));
+            var winner = (totalPerSide[0] > 0) ? 0 : 1;
+            return totalPerSide[winner];
+        }
+
+        private static void Fight()
+        {
+            var groupCount = sGroupCount;
+            // During the target selection phase, each group attempts to choose one target.
+            // In decreasing order of effective power, groups choose their targets; in a tie, the group with the higher initiative chooses first.
+            // The attacking group chooses to target the group in the enemy army to which it would deal the most damage (after accounting for weaknesses and immunities, but not accounting for whether the defending group has enough units to actually receive all of that damage).
+
+            // If an attacking group is considering two defending groups to which it would deal equal damage, it chooses to target the defending group with the largest effective power; if there is still a tie, it chooses the defending group with the highest initiative.
+            // If it cannot deal any defending groups damage, it does not choose a target.
+            // Defending groups can only be chosen as a target by one attacking group.
+            var damage = new int[groupCount, groupCount];
+            for (var a = 0; a < groupCount; ++a)
+            {
+                for (var d = 0; d < groupCount; ++d)
+                {
+                    damage[a, d] = 0;
+                }
+            }
+
+            var attackerMaxDamage = new int[groupCount];
+            for (var a = 0; a < groupCount; ++a)
+            {
+                attackerMaxDamage[a] = int.MinValue;
+                if (sUnitCount[a] == 0)
+                {
+                    continue;
+                }
+                var side = sSide[a];
+                for (var d = 0; d < groupCount; ++d)
+                {
+                    if (sUnitCount[d] == 0)
+                    {
+                        continue;
+                    }
+                    if (sSide[d] == side)
+                    {
+                        continue;
+                    }
+                    var damageAmount = ComputeDamage(a, d);
+                    damage[a, d] = damageAmount;
+                    attackerMaxDamage[a] = Math.Max(damageAmount, attackerMaxDamage[a]);
+                }
+            }
+
+            // sort attacker by damage then attacker initiative
+            var attackTarget = new int[groupCount];
+            var attackerOrder = new int[groupCount];
+            for (var g = 0; g < groupCount; ++g)
+            {
+                attackTarget[g] = -1;
+                attackerOrder[g] = g;
+            }
+
+            for (var i = 0; i < groupCount - 1; ++i)
+            {
+                for (var j = i + 1; j < groupCount; ++j)
+                {
+                    var attacker1 = attackerOrder[i];
+                    var attacker2 = attackerOrder[j];
+                    var maxDamage1 = attackerMaxDamage[attacker1];
+                    var maxDamage2 = attackerMaxDamage[attacker2];
+                    var swap = false;
+                    if (maxDamage2 > maxDamage1)
+                    {
+                        swap = true;
+                    }
+                    else if (maxDamage2 == maxDamage1)
+                    {
+                        swap = sInitiative[attacker2] > sInitiative[attacker1];
+                    }
+                    if (swap)
+                    {
+                        attackerOrder[j] = attacker1;
+                        attackerOrder[i] = attacker2;
+                    }
+                }
+            }
+
+            for (var i = 0; i < groupCount; ++i)
+            {
+                var a = attackerOrder[i];
+                var target = -1;
+                var maxDamage = int.MinValue;
+                for (var d = 0; d < groupCount; ++d)
+                {
+                    var targetAvailable = true;
+                    for (var j = 0; j < groupCount; ++j)
+                    {
+                        if (attackTarget[j] == d)
+                        {
+                            targetAvailable = false;
+                            break;
+                        }
+                    }
+                    if (!targetAvailable)
+                    {
+                        continue;
+                    }
+                    var dmg = damage[a, d];
+                    if (dmg == 0)
+                    {
+                        continue;
+                    }
+                    if (dmg > maxDamage)
+                    {
+                        maxDamage = dmg;
+                        target = d;
+                    }
+                    if (dmg == maxDamage)
+                    {
+                        if (attackerMaxDamage[d] > attackerMaxDamage[target])
+                        {
+                            target = d;
+                        }
+                        else if (attackerMaxDamage[d] == attackerMaxDamage[target])
+                        {
+                            if (sInitiative[d] > sInitiative[target])
+                            {
+                                target = d;
+                            }
+                        }
+                    }
+                }
+                attackTarget[a] = target;
+            }
+
+            for (var i = 0; i < groupCount; ++i)
+            {
+                var a = sInitiativeOrder[i];
+                var target = attackTarget[a];
+                if (target >= 0)
+                {
+                    var dmg = ComputeDamage(a, target);
+                    var units = dmg / sHP[target];
+                    units = Math.Min(sUnitCount[target], units);
+                    sUnitCount[target] -= units;
+                    Console.WriteLine($"{a} -> {target} {dmg} {units} {sUnitCount[target]}");
+                }
+            }
         }
 
         public static void Run()
