@@ -331,6 +331,7 @@ namespace Day24
         readonly private static string[] sAttackType = new string[MAX_COUNT_GROUPS];
         readonly private static int[] sInitiative = new int[MAX_COUNT_GROUPS];
         readonly private static int[] sInitiativeOrder = new int[MAX_COUNT_GROUPS];
+        readonly private static int[] sTotalPerSide = new int[2];
         private static int sGroupCount;
 
         private Program(string inputFile, bool part1)
@@ -601,24 +602,40 @@ namespace Day24
             return attackPower;
         }
 
+        public static void Boost(int boost)
+        {
+            for (var g = 0; g < sGroupCount; ++g)
+            {
+                if (sSide[g] == 0)
+                {
+                    sAttackPower[g] += boost;
+                }
+            }
+        }
+
+        public static int WinningSide()
+        {
+            var winner = (sTotalPerSide[0] > 0) ? 0 : 1;
+            return winner;
+        }
+
         public static int WinningArmyUnits()
         {
             var groupCount = sGroupCount;
-            var totalPerSide = new int[2];
             do
             {
                 Console.WriteLine($"Fight");
                 Fight();
-                totalPerSide[0] = 0;
-                totalPerSide[1] = 0;
+                sTotalPerSide[0] = 0;
+                sTotalPerSide[1] = 0;
                 for (var i = 0; i < groupCount; ++i)
                 {
-                    totalPerSide[sSide[i]] += sUnitCount[i];
+                    sTotalPerSide[sSide[i]] += sUnitCount[i];
                 }
             }
-            while ((totalPerSide[0] > 0) && (totalPerSide[1] > 0));
-            var winner = (totalPerSide[0] > 0) ? 0 : 1;
-            return totalPerSide[winner];
+            while ((sTotalPerSide[0] > 0) && (sTotalPerSide[1] > 0));
+            var winner = (sTotalPerSide[0] > 0) ? 0 : 1;
+            return sTotalPerSide[winner];
         }
 
         private static void Fight()
