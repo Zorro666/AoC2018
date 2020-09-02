@@ -321,7 +321,8 @@ namespace Day24
         const int MAX_IMMUNE_WEAK_COUNT = 4;
         readonly private static int[] sSide = new int[MAX_COUNT_GROUPS];
         readonly private static int[] sHP = new int[MAX_COUNT_GROUPS];
-        readonly private static int[] sUnitCount = new int[MAX_COUNT_GROUPS];
+        readonly private static int[] sUnitCountStart = new int[MAX_COUNT_GROUPS];
+        readonly private static int[] sUnitCountCurrent = new int[MAX_COUNT_GROUPS];
         readonly private static string[,] sWeakness = new string[MAX_COUNT_GROUPS, MAX_IMMUNE_WEAK_COUNT];
         readonly private static int[] sWeaknessCount = new int[MAX_COUNT_GROUPS];
         readonly private static string[,] sImmunity = new string[MAX_COUNT_GROUPS, MAX_IMMUNE_WEAK_COUNT];
@@ -343,8 +344,6 @@ namespace Day24
             {
                 var result1 = WinningArmyUnits();
                 Console.WriteLine($"Day24 : Result1 {result1}");
-                // 28781 : TOO LOW
-                // 29150 : TOO HIGH
                 var expected = 28976;
                 if (result1 != expected)
                 {
@@ -353,9 +352,10 @@ namespace Day24
             }
             else
             {
-                var result2 = -123;
+                SmallestBoost();
+                var result2 = sTotalPerSide[0];
                 Console.WriteLine($"Day24 : Result2 {result2}");
-                var expected = 1797;
+                var expected = 3534;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -493,7 +493,7 @@ namespace Day24
                     var initiative = int.Parse(attackTokens[10]);
 
                     sSide[sGroupCount] = side;
-                    sUnitCount[sGroupCount] = unitCount;
+                    sUnitCountStart[sGroupCount] = unitCount;
                     sHP[sGroupCount] = hp;
                     sWeaknessCount[sGroupCount] = weaknessCount;
                     sImmunityCount[sGroupCount] = immunityCount;
@@ -505,7 +505,7 @@ namespace Day24
             }
             ComputeAttackMultiplier();
             ComputeInitiativeOrder();
-            OutputGroups();
+            //OutputGroups();
         }
 
         private static void ComputeInitiativeOrder()
@@ -566,7 +566,7 @@ namespace Day24
         {
             for (var g = 0; g < sGroupCount; ++g)
             {
-                Console.Write($"Group[{g}] Side:{sSide[g]} Units:{sUnitCount[g]} HP:{sHP[g]} ");
+                Console.Write($"Group[{g}] Side:{sSide[g]} Units:{sUnitCountStart[g]} HP:{sHP[g]} ");
                 if (sWeaknessCount[g] > 0)
                 {
                     Console.Write($"Weakness: ");
@@ -596,10 +596,40 @@ namespace Day24
             {
                 return 0;
             }
-            var attackPower = sAttackPower[attacker] * sUnitCount[attacker];
+            var attackPower = sAttackPower[attacker] * sUnitCountCurrent[attacker];
             var attackMultiplier = sAttackMultiplier[attacker, defender];
             attackPower *= attackMultiplier;
             return attackPower;
+        }
+
+        public static int SmallestBoost()
+        {
+            var badBoost = 0;
+            var goodBoost = 1;
+            int winner;
+            do
+            {
+                goodBoost *= 2;
+                Boost(goodBoost);
+                winner = RunFight();
+                Boost(-goodBoost);
+                if (winner == 1)
+                {
+                    badBoost = goodBoost;
+                }
+            }
+            while (winner != 0);
+            for (var boost = badBoost; boost < goodBoost; ++boost)
+            {
+                Boost(boost);
+                winner = RunFight();
+                Boost(-boost);
+                if (winner == 0)
+                {
+                    return boost;
+                }
+            }
+            throw new InvalidProgramException($"Failed to find minimum boost");
         }
 
         public static void Boost(int boost)
@@ -613,28 +643,39 @@ namespace Day24
             }
         }
 
-        public static int WinningSide()
+        public static int RunFight()
         {
+            var groupCount = sGroupCount;
+            for (var i = 0; i < groupCount; ++i)
+            {
+                sUnitCountCurrent[i] = sUnitCountStart[i];
+            }
+            var lastTotal0 = 0;
+            var lastTotal1 = 0;
+            do
+            {
+                Fight();
+                sTotalPerSide[0] = 0;
+                sTotalPerSide[1] = 0;
+                for (var i = 0; i < groupCount; ++i)
+                {
+                    sTotalPerSide[sSide[i]] += sUnitCountCurrent[i];
+                }
+                if ((sTotalPerSide[0] == lastTotal0) && (sTotalPerSide[1] == lastTotal1))
+                {
+                    return -1;
+                }
+                lastTotal0 = sTotalPerSide[0];
+                lastTotal1 = sTotalPerSide[1];
+            }
+            while ((sTotalPerSide[0] > 0) && (sTotalPerSide[1] > 0));
             var winner = (sTotalPerSide[0] > 0) ? 0 : 1;
             return winner;
         }
 
         public static int WinningArmyUnits()
         {
-            var groupCount = sGroupCount;
-            do
-            {
-                Console.WriteLine($"Fight");
-                Fight();
-                sTotalPerSide[0] = 0;
-                sTotalPerSide[1] = 0;
-                for (var i = 0; i < groupCount; ++i)
-                {
-                    sTotalPerSide[sSide[i]] += sUnitCount[i];
-                }
-            }
-            while ((sTotalPerSide[0] > 0) && (sTotalPerSide[1] > 0));
-            var winner = (sTotalPerSide[0] > 0) ? 0 : 1;
+            var winner = RunFight();
             return sTotalPerSide[winner];
         }
 
@@ -659,14 +700,14 @@ namespace Day24
 
             for (var a = 0; a < groupCount; ++a)
             {
-                if (sUnitCount[a] == 0)
+                if (sUnitCountCurrent[a] == 0)
                 {
                     continue;
                 }
                 var side = sSide[a];
                 for (var d = 0; d < groupCount; ++d)
                 {
-                    if (sUnitCount[d] == 0)
+                    if (sUnitCountCurrent[d] == 0)
                     {
                         continue;
                     }
@@ -694,8 +735,8 @@ namespace Day24
                 {
                     var attacker1 = attackerOrder[i];
                     var attacker2 = attackerOrder[j];
-                    var effectivePower1 = sAttackPower[attacker1] * sUnitCount[attacker1];
-                    var effectivePower2 = sAttackPower[attacker2] * sUnitCount[attacker2];
+                    var effectivePower1 = sAttackPower[attacker1] * sUnitCountCurrent[attacker1];
+                    var effectivePower2 = sAttackPower[attacker2] * sUnitCountCurrent[attacker2];
                     var swap = false;
                     if (effectivePower2 > effectivePower1)
                     {
@@ -745,8 +786,8 @@ namespace Day24
                     }
                     if (dmg == maxDamage)
                     {
-                        var effectivePower1 = sAttackPower[target] * sUnitCount[target];
-                        var effectivePower2 = sAttackPower[d] * sUnitCount[d];
+                        var effectivePower1 = sAttackPower[target] * sUnitCountCurrent[target];
+                        var effectivePower2 = sAttackPower[d] * sUnitCountCurrent[d];
                         if (effectivePower2 > effectivePower1)
                         {
                             target = d;
@@ -771,9 +812,9 @@ namespace Day24
                 {
                     var dmg = ComputeDamage(a, target);
                     var units = dmg / sHP[target];
-                    units = Math.Min(sUnitCount[target], units);
-                    sUnitCount[target] -= units;
-                    Console.WriteLine($"{a} -> {target} {dmg} {units} {sUnitCount[target]}");
+                    units = Math.Min(sUnitCountCurrent[target], units);
+                    sUnitCountCurrent[target] -= units;
+                    //Console.WriteLine($"{a} -> {target} {dmg} {units} {sUnitCountCurrent[target]}");
                 }
             }
         }
@@ -783,7 +824,7 @@ namespace Day24
             Console.WriteLine("Day24 : Start");
             _ = new Program("Day24/input.txt", true);
             _ = new Program("Day24/input.txt", false);
-            Console.WriteLine("Day24 : End");
+
         }
     }
 }
