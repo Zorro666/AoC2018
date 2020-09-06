@@ -42,8 +42,10 @@ Let me look up how much hot chocolate that breed of reindeer needs."
 The list of fixed points in spacetime (your puzzle input) is a set of four-dimensional coordinates.
 To align your device, acquire the hot chocolate, and save the reindeer, you just need to find the number of constellations of points in the list.
 
-Two points are in the same constellation if their manhattan distance apart is no more than 3 or if they can form a chain of points, each a manhattan distance no more than 3 from the last, between the two of them.
-(That is, if a point is close enough to a constellation, it "joins" that constellation.) For example:
+Two points are in the same constellation if their manhattan distance apart is no more than 3 or if they can form a chain of points, 
+each a manhattan distance no more than 3 from the last, between the two of them.
+(That is, if a point is close enough to a constellation, it "joins" that constellation.) 
+For example:
 
  0,0,0,0
  3,0,0,0
@@ -110,48 +112,161 @@ namespace Day25
 {
     class Program
     {
-        private Program(string inputFile, bool part1)
+        const int MAX_NUM_STARS = 2048;
+        const int MAX_NUM_CONSTELLATIONS = 1024;
+        readonly private static int[] sStarsX = new int[MAX_NUM_STARS];
+        readonly private static int[] sStarsY = new int[MAX_NUM_STARS];
+        readonly private static int[] sStarsZ = new int[MAX_NUM_STARS];
+        readonly private static int[] sStarsW = new int[MAX_NUM_STARS];
+        readonly private static int[,] sConstellations = new int[MAX_NUM_CONSTELLATIONS, MAX_NUM_STARS];
+        readonly private static int[] sConstellationStarCounts = new int[MAX_NUM_CONSTELLATIONS];
+        private static int sCountStars;
+        private static int sCountConstellations;
+
+        private Program(string inputFile)
         {
             var lines = AoC.Program.ReadLines(inputFile);
             Parse(lines);
 
-            if (part1)
+            var result1 = CountConstellations();
+            Console.WriteLine($"Day25 : Result1 {result1}");
+            var expected = 399;
+            if (result1 != expected)
             {
-                var result1 = CountConstellations();
-                Console.WriteLine($"Day25 : Result1 {result1}");
-                var expected = 280;
-                if (result1 != expected)
-                {
-                    throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
-                }
-            }
-            else
-            {
-                var result2 = -123;
-                Console.WriteLine($"Day25 : Result2 {result2}");
-                var expected = 1797;
-                if (result2 != expected)
-                {
-                    throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
-                }
+                throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
             }
         }
 
         public static void Parse(string[] lines)
         {
-            throw new NotImplementedException();
+            sCountConstellations = 0;
+            sCountStars = 0;
+            if (lines.Length > MAX_NUM_STARS)
+            {
+                throw new InvalidProgramException($"Bad input too many stars {lines.Length} Max {MAX_NUM_STARS}");
+            }
+            foreach (var line in lines)
+            {
+                var tokens = line.Split(',');
+                if (tokens.Length != 4)
+                {
+                    throw new InvalidProgramException($"Bad line '{line}' expected 4 tokens got {tokens.Length}");
+                }
+                sStarsX[sCountStars] = int.Parse(tokens[0]);
+                sStarsY[sCountStars] = int.Parse(tokens[1]);
+                sStarsZ[sCountStars] = int.Parse(tokens[2]);
+                sStarsW[sCountStars] = int.Parse(tokens[3]);
+                ++sCountStars;
+            }
+            for (var c = 0; c < MAX_NUM_CONSTELLATIONS; ++c)
+            {
+                sConstellationStarCounts[c] = 0;
+            }
+        }
+
+        private static int FindConstellation(int star)
+        {
+            var myX = sStarsX[star];
+            var myY = sStarsY[star];
+            var myZ = sStarsZ[star];
+            var myW = sStarsW[star];
+            var myConstellation = -1;
+            for (var c = 0; c < sCountConstellations; ++c)
+            {
+                var starCount = sConstellationStarCounts[c];
+                for (var s = 0; s < starCount; ++s)
+                {
+                    var otherStar = sConstellations[c, s];
+                    var otherX = sStarsX[otherStar];
+                    var otherY = sStarsY[otherStar];
+                    var otherZ = sStarsZ[otherStar];
+                    var otherW = sStarsW[otherStar];
+                    var distance = 0;
+                    distance += Math.Abs(myX - otherX);
+                    distance += Math.Abs(myY - otherY);
+                    distance += Math.Abs(myZ - otherZ);
+                    distance += Math.Abs(myW - otherW);
+                    if (distance <= 3)
+                    {
+                        myConstellation = c;
+                        break;
+                    }
+                }
+                if (myConstellation != -1)
+                {
+                    break;
+                }
+            }
+            return myConstellation;
+        }
+
+        private static int CountNonZeroConstellations()
+        {
+            var count = 0;
+            for (var c = 0; c < sCountConstellations; ++c)
+            {
+                if (sConstellationStarCounts[c] != 0)
+                {
+                    ++count;
+                }
+            }
+            return count;
         }
 
         public static int CountConstellations()
         {
-            throw new NotImplementedException();
+            for (var star = 0; star < sCountStars; ++star)
+            {
+                var constellation = FindConstellation(star);
+                if (constellation == -1)
+                {
+                    constellation = sCountConstellations;
+                    ++sCountConstellations;
+                }
+                sConstellations[constellation, sConstellationStarCounts[constellation]] = star;
+                ++sConstellationStarCounts[constellation];
+            }
+
+            // Merge constellations
+            var count = CountNonZeroConstellations();
+            int oldCount;
+            do
+            {
+                oldCount = count;
+                for (var c = 0; c < sCountConstellations; ++c)
+                {
+                    var starCount = sConstellationStarCounts[c];
+                    var constellation = c;
+                    for (var s = 0; s < starCount; ++s)
+                    {
+                        var star = sConstellations[c, s];
+                        constellation = FindConstellation(star);
+                        if (constellation != c)
+                        {
+                            break;
+                        }
+                    }
+                    if (constellation != c)
+                    {
+                        for (var s = 0; s < starCount; ++s)
+                        {
+                            var star = sConstellations[c, s];
+                            sConstellations[constellation, sConstellationStarCounts[constellation]] = star;
+                            ++sConstellationStarCounts[constellation];
+                            --sConstellationStarCounts[c];
+                        }
+                    }
+                }
+                count = CountNonZeroConstellations();
+            }
+            while (count != oldCount);
+            return count;
         }
 
         public static void Run()
         {
             Console.WriteLine("Day25 : Start");
-            _ = new Program("Day25/input.txt", true);
-            _ = new Program("Day25/input.txt", false);
+            _ = new Program("Day25/input.txt");
             Console.WriteLine("Day25 : End");
         }
     }
