@@ -85,7 +85,7 @@ namespace Day21
             {
                 var result1 = ManualRunProgram(0, 0);
                 Console.WriteLine($"Day21 : Result1 {result1}");
-                var expected = 15690445;
+                var expected = 11840402;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -95,7 +95,7 @@ namespace Day21
             {
                 var result2 = ManualRunProgram(1, 11000);
                 Console.WriteLine($"Day21 : Result2 {result2}");
-                var expected = 936387;
+                var expected = 6577657;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -381,19 +381,18 @@ namespace Day21
             sRegisters[0] = reg0;
             goto Instruction_0;
         //goto Instruction_5;
-        //#ip 1
+        //#ip 3
         //  0: seti 123 0 4
         Instruction_0: sRegisters[4] = 123;
             goto Instruction_1;
         //  1: bani 4 456 4
         Instruction_1: sRegisters[4] = sRegisters[4] & 456;
             goto Instruction_2;
-        //  1: bani 4 456 4
         //  2: eqri 4 72 4
         Instruction_2: //sRegisters[4] = (sRegisters[4] == 72) ? 1 : 0;
             goto Instruction_3;
-        //  3: addr 4 1 1
-        Instruction_3: //sRegisters[1] = sRegisters[4] + 3; // sRegisters[1];
+        //  3: addr 4 3 3
+        Instruction_3: //sRegisters[3] = sRegisters[4] + 3; // sRegisters[3];
             if (sRegisters[4] == 72)
             {
                 sRegisters[4] = 1;
@@ -404,38 +403,38 @@ namespace Day21
                 sRegisters[4] = 0;
                 goto Instruction_4;
             }
-        //  4: seti 0 0 1
-        Instruction_4: sRegisters[1] = 0;
+        //  4: seti 0 0 3
+        Instruction_4: sRegisters[3] = 0;
             goto Instruction_1;
-        //  5: seti 0 4 4
+        //  5: seti 0 9 4
         Instruction_5: sRegisters[4] = 0;
-        //  6: bori 4 65536 3
-        Instruction_6: sRegisters[3] = sRegisters[4] | 65536;
-            //  7: seti 12670166 8 4
+        //  6: bori 4 65536 2
+        Instruction_6: sRegisters[2] = sRegisters[4] | 65536;
+            //  7: seti 6152285 4 4
             goto Instruction_7;
-        Instruction_7: sRegisters[4] = 12670166;
-            //  8: bani 3 255 2
+        Instruction_7: sRegisters[4] = 6152285;
+            //  8: bani 2 255 1
             goto Instruction_8;
-        Instruction_8: sRegisters[2] = sRegisters[3] & 255;
-            //  9: addr 4 2 4
+        Instruction_8: sRegisters[1] = sRegisters[2] & 255;
+            //  9: addr 4 1 4
             goto Instruction_9;
-        Instruction_9: sRegisters[4] = sRegisters[4] + sRegisters[2];
+        Instruction_9: sRegisters[4] = sRegisters[4] + sRegisters[1];
             // 10: bani 4 16777215 4
             goto Instruction_10;
-        Instruction_10: sRegisters[4] = 16777215 & sRegisters[4];
+        Instruction_10: sRegisters[4] = sRegisters[4] & 16777215;
             // 11: muli 4 65899 4
             goto Instruction_11;
-        Instruction_11: sRegisters[4] = 65899 * sRegisters[4];
+        Instruction_11: sRegisters[4] = sRegisters[4] * 65899;
             // 12: bani 4 16777215 4
             goto Instruction_12;
-        Instruction_12: sRegisters[4] = 16777215 & sRegisters[4];
-            // 13: gtir 256 3 2
+        Instruction_12: sRegisters[4] = sRegisters[4] & 16777215;
+            // 13: gtir 256 2 1
             goto Instruction_13;
-        Instruction_13: sRegisters[2] = (256 > sRegisters[3]) ? 1 : 0;
+        Instruction_13: sRegisters[1] = (256 > sRegisters[2]) ? 1 : 0;
             goto Instruction_14;
-        // 14: addr 2 1 1
-        Instruction_14: sRegisters[1] = sRegisters[2] + 14; // sRegisters[1];
-            if (256 > sRegisters[3])
+        // 14: addr 1 3 3
+        Instruction_14: sRegisters[3] = sRegisters[1] + 14; // sRegisters[1];
+            if (256 > sRegisters[2])
             {
                 goto Instruction_16;
             }
@@ -443,26 +442,26 @@ namespace Day21
             {
                 goto Instruction_15;
             }
-        // 15: addi 1 1 1
-        Instruction_15: sRegisters[1] = 16; // sRegisters[1] + 1;
+        // 15: addi 3 1 3
+        Instruction_15: sRegisters[3] = 16; // sRegisters[3] + 1;
             goto Instruction_17;
-        // 16: seti 27 6 1
-        Instruction_16: sRegisters[1] = 27;
+        // 16: seti 27 4 3
+        Instruction_16: sRegisters[3] = 27;
             goto Instruction_28;
-        // 17: seti 0 0 2
-        Instruction_17: sRegisters[2] = 0;
-        // 18: addi 2 1 5
-        Instruction_18: sRegisters[5] = sRegisters[2] + 1;
+        // 17: seti 0 3 1
+        Instruction_17: sRegisters[1] = 0;
+        // 18: addi 1 1 5
+        Instruction_18: sRegisters[5] = sRegisters[1] + 1;
             goto Instruction_19;
         // 19: muli 5 256 5
-        Instruction_19: sRegisters[5] = 256 * sRegisters[5];
+        Instruction_19: sRegisters[5] = sRegisters[5] * 256;
             goto Instruction_20;
-        // 20: gtrr 5 3 5
-        Instruction_20: //sRegisters[5] = (sRegisters[5] > sRegisters[3]) ? 1 : 0;
+        // 20: gtrr 5 2 5
+        Instruction_20: //sRegisters[5] = (sRegisters[5] > sRegisters[2]) ? 1 : 0;
             goto Instruction_21;
-        // 21: addr 5 1 1
-        Instruction_21: //sRegisters[1] = sRegisters[5] + sRegisters[1];
-            if (sRegisters[5] > sRegisters[3])
+        // 21: addr 5 3 3
+        Instruction_21: //sRegisters[3] = sRegisters[5] + sRegisters[3];
+            if (sRegisters[5] > sRegisters[2])
             {
                 sRegisters[5] = 1;
                 goto Instruction_23;
@@ -471,29 +470,29 @@ namespace Day21
             {
                 goto Instruction_22;
             }
-        // 22: addi 1 1 1
-        Instruction_22: sRegisters[1] = 23; // sRegisters[1] + 1;
+        // 22: addi 3 1 3
+        Instruction_22: sRegisters[3] = 23; // sRegisters[3] + 1;
             goto Instruction_24;
-        // 23: seti 25 6 1
-        Instruction_23: sRegisters[1] = 25;
+        // 23: seti 25 9 3
+        Instruction_23: sRegisters[3] = 25;
             goto Instruction_26;
-        // 24: addi 2 1 2
-        Instruction_24: sRegisters[2] = sRegisters[2] + 1;
+        // 24: addi 1 1 1
+        Instruction_24: sRegisters[1] = sRegisters[1] + 1;
             goto Instruction_25;
-        // 25: seti 17 8 1
-        Instruction_25: sRegisters[1] = 17;
+        // 25: seti 17 4 3
+        Instruction_25: sRegisters[3] = 17;
             goto Instruction_18;
-        // 26: setr 2 5 3
-        Instruction_26: sRegisters[3] = sRegisters[2];
+        // 26: setr 1 9 2
+        Instruction_26: sRegisters[2] = sRegisters[1];
             goto Instruction_27;
-        // 27: seti 7 2 1
-        Instruction_27: sRegisters[1] = 7;
+        // 27: seti 7 4 3
+        Instruction_27: sRegisters[3] = 7;
             goto Instruction_8;
-        // 28: eqrr 4 0 2
-        Instruction_28: sRegisters[2] = (sRegisters[4] == sRegisters[0]) ? 1 : 0;
+        // 28: eqrr 4 0 1
+        Instruction_28: sRegisters[1] = (sRegisters[4] == sRegisters[0]) ? 1 : 0;
             goto Instruction_29;
-        // 29: addr 2 1 1
-        Instruction_29: sRegisters[1] = sRegisters[2] + 29; // sRegisters[1];
+        // 29: addr 1 3 3
+        Instruction_29: sRegisters[3] = sRegisters[1] + 29; // sRegisters[3];
             if (sRegisters[4] == sRegisters[0])
             {
                 goto Instruction_31;
@@ -524,8 +523,8 @@ namespace Day21
                 }
                 goto Instruction_30;
             }
-        // 30: seti 5 8 1
-        Instruction_30: sRegisters[1] = 5;
+        // 30: seti 5 6 3
+        Instruction_30: sRegisters[3] = 5;
             goto Instruction_6;
         Instruction_31:
             Console.WriteLine($"SUCCESS {sRegisters[0]}");
@@ -533,3 +532,4 @@ namespace Day21
         }
     }
 }
+
