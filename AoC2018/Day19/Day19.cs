@@ -137,7 +137,7 @@ namespace Day19
                 RunPart2(0, 1);
                 var result2 = GetRegister(0);
                 Console.WriteLine($"Day19 : Result2 {result2}");
-                var expected = 22302144;
+                var expected = 27024480;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -440,17 +440,18 @@ namespace Day19
             }
             sRegisters[register] = value;
 
+            // pc = register 5
             int pc;
 
-            //  0 : addi 5 16 5
+            // 0 : addi 5 16 5
             pc = 0 + 16 + 1;
             goto label_17;
 
         label_1:
             //Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
-            //  1 : seti 1 8 1
-            sRegisters[1] = 1;
-            sRegisters[0] = SumOfFactors(sRegisters[1]);
+            // 1 : seti 1 8 3
+            sRegisters[3] = 1;
+            sRegisters[0] = SumOfFactors(sRegisters[2]);
             return;
 
         label_2:
@@ -458,18 +459,18 @@ namespace Day19
             {
                 Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
             }
-            //  2 : seti 1 3 5
-            sRegisters[5] = 1;
+            // 2 : seti 1 1 1
+            sRegisters[1] = 1;
 
         label_3:
-            //  3 : mulr 1 5 3
-            sRegisters[3] = sRegisters[1] * sRegisters[5];
+            // 3 : mulr 3 1 4
+            sRegisters[4] = sRegisters[3] * sRegisters[1];
 
-            //  4 : eqrr 3 2 3
-            sRegisters[3] = sRegisters[3] == sRegisters[2] ? 1 : 0;
+            // 4 : eqrr 4 2 4
+            sRegisters[4] = sRegisters[4] == sRegisters[2] ? 1 : 0;
 
-            //  5 : addr 3 4 4
-            pc = sRegisters[3] + 5 + 1;
+            // 5 : addr 4 5 5
+            pc = sRegisters[4] + 5 + 1;
             if (pc == 7)
                 goto label_7;
             else if (pc == 6)
@@ -478,23 +479,23 @@ namespace Day19
                 throw new NotImplementedException($"pc {pc}");
 
             label_6:
-            //  6 : addi 4 1 4
+            // 6 : addi 5 1 5
             pc = 6 + 1 + 1;
             goto label_8;
 
         label_7:
-            //  7 : addr 1 0 0
-            sRegisters[0] = sRegisters[1] + sRegisters[0];
+            // 7 : addr 3 0 0
+            sRegisters[0] = sRegisters[3] + sRegisters[0];
 
         label_8:
-            //  8 : addi 5 1 5
-            sRegisters[5] = sRegisters[5] + 1;
+            // 8 : addi 1 1 1
+            sRegisters[1] = sRegisters[1] + 1;
 
-            //  9 : gtrr 5 2 3
-            sRegisters[3] = sRegisters[5] > sRegisters[2] ? 1 : 0;
+            // 9 : gtrr 1 2 4
+            sRegisters[4] = sRegisters[1] > sRegisters[2] ? 1 : 0;
 
-            // 10 : addr 4 3 4
-            pc = 10 + sRegisters[3] + 1;
+            // 10 : addr 5 4 5
+            pc = 10 + sRegisters[4] + 1;
             if (pc == 12)
                 goto label_12;
             else if (pc == 11)
@@ -503,20 +504,20 @@ namespace Day19
                 throw new NotImplementedException($"pc {pc}");
 
             label_11:
-            // 11 : seti 2 2 4
+            // 11 : seti 2 7 5
             pc = 2 + 1;
             goto label_3;
 
         label_12:
-            // 12 : addi 1 1 1
-            sRegisters[1] = sRegisters[1] + 1;
+            // 12 : addi 3 1 3
+            sRegisters[3] = sRegisters[3] + 1;
 
-            // 13 : gtrr 1 2 3
-            sRegisters[3] = sRegisters[1] > sRegisters[2] ? 1 : 0;
+            // 13 : gtrr 3 2 4
+            sRegisters[4] = sRegisters[3] > sRegisters[2] ? 1 : 0;
 
             //Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
-            // 14 : addr 3 4 4
-            pc = sRegisters[3] + 14 + 1;
+            // 14 : addr 4 5 5
+            pc = sRegisters[4] + 14 + 1;
             if (pc == 16)
                 goto label_16;
             else if (pc == 15)
@@ -525,12 +526,12 @@ namespace Day19
                 throw new NotImplementedException($"pc {pc}");
 
             label_15:
-            // 15 : seti 1 4 4
+            // 15 : seti 1 5 5
             pc = 1 + 1;
             goto label_2;
 
         label_16:
-            // 16 : mulr 4 4 4
+            // 16 : mulr 5 5 5
             pc = 16 * 16 + 1;
             goto label_257;
 
@@ -543,7 +544,7 @@ namespace Day19
             sRegisters[2] = sRegisters[2] * sRegisters[2];
             sRegisters[2] = 4;
 
-            // 19 : mulr 4 2 2
+            // 19 : mulr 5 2 2
             sRegisters[2] = 19 * sRegisters[2];
             sRegisters[2] = 19 * 4;
 
@@ -551,23 +552,23 @@ namespace Day19
             sRegisters[2] = sRegisters[2] * 11;
             sRegisters[2] = 19 * 4 * 11;
 
-            // 21 : addi 3 6 3
-            sRegisters[3] = sRegisters[3] + 6;
-            sRegisters[3] = 6;
+            // 21 : addi 4 8 4
+            sRegisters[4] = sRegisters[4] + 8;
+            sRegisters[4] = 8;
 
-            // 22 : mulr 3 4 3
-            sRegisters[3] = sRegisters[3] * 22;
-            sRegisters[3] = 6 * 22;
+            // 22 : mulr 4 5 4
+            sRegisters[4] = sRegisters[4] * 22;
+            sRegisters[4] = 8 * 22;
 
-            // 23 : addi 3 8 3
-            sRegisters[3] = sRegisters[3] + 8;
-            sRegisters[3] = 6 * 22 + 8;
+            // 23 : addi 4 20 4
+            sRegisters[4] = sRegisters[4] + 20;
+            sRegisters[4] = 8 * 22 + 20;
 
-            // 24 : addr 2 3 2
-            sRegisters[2] = sRegisters[2] + sRegisters[3];
-            sRegisters[2] = 19 * 4 * 11 + 6 * 22 + 8;
+            // 24 : addr 2 4 2
+            sRegisters[2] = sRegisters[2] + sRegisters[4];
+            sRegisters[2] = 19 * 4 * 11 + 8 * 22 + 20;
 
-            // 25 : addr 4 0 4
+            // 25 : addr 5 0 5
             pc = 25 + sRegisters[0] + 1;
             if (pc == 26)
                 goto label_26;
@@ -577,7 +578,7 @@ namespace Day19
                 throw new NotImplementedException($"pc {pc}");
 
             label_26:
-            // 26 : seti 0 1 4
+            // 26 : seti 0 4 5
             pc = sRegisters[0] + 1;
             if (pc == 1)
                 goto label_1;
@@ -587,31 +588,31 @@ namespace Day19
                 throw new NotImplementedException($"pc {pc}");
 
             label_27:
-            // 27 : setr 4 4 3
-            sRegisters[3] = 27;
+            // 27 : setr 5 8 4
+            sRegisters[4] = 27;
 
-            // 28 : mulr 3 4 3
-            sRegisters[3] = sRegisters[3] * 28;
+            // 28 : mulr 4 5 4
+            sRegisters[4] = sRegisters[4] * 28;
 
-            // 29 : addr 4 3 3
-            sRegisters[3] = 29 + sRegisters[3];
+            // 29 : addr 5 4 4
+            sRegisters[4] = 29 + sRegisters[4];
 
-            // 30 : mulr 4 3 3
-            sRegisters[3] = 30 * sRegisters[3];
+            // 30 : mulr 5 4 4
+            sRegisters[4] = 30 * sRegisters[4];
 
-            // 31 : muli 3 14 3
-            sRegisters[3] = sRegisters[3] * 14;
+            // 31 : muli 4 14 4
+            sRegisters[4] = sRegisters[4] * 14;
 
-            // 32 : mulr 3 4 3
-            sRegisters[3] = sRegisters[3] * 32;
+            // 32 : mulr 4 5 4
+            sRegisters[4] = sRegisters[4] * 32;
 
-            // 33 : addr 2 3 2
-            sRegisters[2] = sRegisters[2] + sRegisters[3];
+            // 33 : addr 2 4 2
+            sRegisters[2] = sRegisters[2] + sRegisters[4];
 
-            // 34 : seti 0 4 0
+            // 34 : seti 0 7 0
             sRegisters[0] = 0;
 
-            // 35 : seti 0 7 4
+            // 35 : seti 0 9 5
             pc = 0 + 1;
             goto label_1;
 
@@ -620,3 +621,4 @@ namespace Day19
         }
     }
 }
+
