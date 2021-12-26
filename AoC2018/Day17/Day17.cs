@@ -193,7 +193,7 @@ namespace Day17
     {
         const int MAX_GRID_WIDTH = 1024;
         const int MAX_GRID_HEIGHT = 2048;
-        const int MAX_NUM_SPRINGS = 16;
+        const int MAX_NUM_SPRINGS = 64;
         readonly static char[,] sMapInitial = new char[MAX_GRID_WIDTH, MAX_GRID_HEIGHT];
         readonly static char[,] sMapCurrent = new char[MAX_GRID_WIDTH, MAX_GRID_HEIGHT];
         readonly static int[] sSpringsDownX = new int[MAX_NUM_SPRINGS];
@@ -222,7 +222,7 @@ namespace Day17
             {
                 var result1 = wet + settled;
                 Console.WriteLine($"Day17 : Result1 {result1}");
-                var expected = 3879;
+                var expected = 30384;
 
                 if (result1 != expected)
                 {
@@ -234,7 +234,7 @@ namespace Day17
             {
                 var result2 = settled;
                 Console.WriteLine($"Day17 : Result2 {result2}");
-                var expected = 24660;
+                var expected = 24479;
                 if (result2 != expected)
                 {
                     OutputMap();
@@ -418,6 +418,11 @@ namespace Day17
                             {
                                 AddSpringRight(x, y);
                             }
+                            if ((left == '#') && (right == '#'))
+                            {
+                                AddSpringLeft(x, y);
+                                //AddSpringRight(x, y);
+                            }
                             break;
                         }
                         else
@@ -481,6 +486,10 @@ namespace Day17
                                     sMapCurrent[x2, y] = '~';
                                 }
                             }
+                            break;
+                        }
+                        else if ((cell == '~') && (left == '~') && (right == '~'))
+                        {
                             break;
                         }
                         else
@@ -556,6 +565,10 @@ namespace Day17
                             break;
                         }
                         else if ((cell == '~') && (left == '~') && (right == '~'))
+                        {
+                            break;
+                        }
+                        else if ((cell == '~') && (left == '~') && (right == '#'))
                         {
                             break;
                         }
@@ -802,7 +815,7 @@ namespace Day17
                     same = 0;
                 }
             }
-            while (same < 2048);
+            while (same < 8);
             //OutputMap();
         }
 
@@ -815,3 +828,4 @@ namespace Day17
         }
     }
 }
+
