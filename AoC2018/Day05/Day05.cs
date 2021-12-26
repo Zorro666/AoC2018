@@ -67,7 +67,7 @@ namespace Day05
             {
                 var result1 = Reduce(lines[0]);
                 Console.WriteLine($"Day05 : Result1 {result1}");
-                var expected = 10886;
+                var expected = 10368;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -77,7 +77,7 @@ namespace Day05
             {
                 var result2 = Shortest(lines[0]);
                 Console.WriteLine($"Day05 : Result2 {result2}");
-                var expected = 4684;
+                var expected = 4122;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

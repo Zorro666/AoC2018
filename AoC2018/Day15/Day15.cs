@@ -429,7 +429,7 @@ namespace Day15
             {
                 var result1 = BattleResult(3);
                 Console.WriteLine($"Day15 : Result1 {result1}");
-                var expected = 250594;
+                var expected = 250648;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -439,7 +439,8 @@ namespace Day15
             {
                 var result2 = ElfWinBattleResult();
                 Console.WriteLine($"Day15 : Result2 {result2}");
-                var expected = 52133;
+                // 42392 is too high
+                var expected = 42392;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -967,7 +968,7 @@ namespace Day15
         {
             SetupFromStart();
             sElfAttack = elfAttack;
-            const int MAX_NUM_ROUNDS = 1024;
+            const int MAX_NUM_ROUNDS = 128;
             for (var r = 0; r < MAX_NUM_ROUNDS; ++r)
             {
                 sRoundCount = r;
@@ -988,12 +989,12 @@ namespace Day15
         public static int ElfAttackPower()
         {
             var elfCount = UnitCount('E');
-            for (var elfAttack = 4; elfAttack < 50; ++elfAttack)
+            for (var elfAttack = 4; elfAttack < 40; ++elfAttack)
             {
                 bool elfDied = false;
                 SetupFromStart();
                 sElfAttack = elfAttack;
-                const int MAX_NUM_ROUNDS = 1024;
+                const int MAX_NUM_ROUNDS = 128;
                 for (var r = 0; r < MAX_NUM_ROUNDS; ++r)
                 {
                     sRoundCount = r;

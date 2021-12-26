@@ -84,7 +84,7 @@ namespace Day04
         const int MAX_NUM_GUARDS = 1024 * 128;
         readonly static bool[] sValidGuard = new bool[MAX_NUM_GUARDS];
 
-        const int MAX_NUM_ENTRIES = 1024;
+        const int MAX_NUM_ENTRIES = 2048;
         static int sEntriesCount;
         readonly static int[] sYears = new int[MAX_NUM_ENTRIES];
         readonly static int[] sMonths = new int[MAX_NUM_ENTRIES];
@@ -103,7 +103,7 @@ namespace Day04
             {
                 var result1 = GuardMostAsleepMinute();
                 Console.WriteLine($"Day04 : Result1 {result1}");
-                var expected = 99759;
+                var expected = 103720;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -113,7 +113,7 @@ namespace Day04
             {
                 var result2 = GuardMostAsleepPerMinute();
                 Console.WriteLine($"Day04 : Result2 {result2}");
-                var expected = 97884;
+                var expected = 110913;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

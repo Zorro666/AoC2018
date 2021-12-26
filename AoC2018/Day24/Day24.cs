@@ -344,7 +344,7 @@ namespace Day24
             {
                 var result1 = WinningArmyUnits();
                 Console.WriteLine($"Day24 : Result1 {result1}");
-                var expected = 28976;
+                var expected = 16747;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -355,7 +355,7 @@ namespace Day24
                 SmallestBoost();
                 var result2 = sTotalPerSide[0];
                 Console.WriteLine($"Day24 : Result2 {result2}");
-                var expected = 3534;
+                var expected = 5923;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

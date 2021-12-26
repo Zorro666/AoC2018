@@ -87,7 +87,7 @@ namespace Day03
             {
                 var result1 = OverClaimed();
                 Console.WriteLine($"Day03 : Result1 {result1}");
-                var expected = 115242;
+                var expected = 97218;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -97,7 +97,7 @@ namespace Day03
             {
                 var result2 = SingleClaimID();
                 Console.WriteLine($"Day03 : Result2 {result2}");
-                var expected = 1046;
+                var expected = 717;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

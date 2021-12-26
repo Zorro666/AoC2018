@@ -94,7 +94,7 @@ namespace Day14
             {
                 var result1 = NextTenRecipes(numRecipes);
                 Console.WriteLine($"Day14 : Result1 {result1}");
-                var expected = "4910101614";
+                var expected = "7162937112";
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -104,7 +104,7 @@ namespace Day14
             {
                 var result2 = HowManyRecipes(lines[0].Trim());
                 Console.WriteLine($"Day14 : Result2 {result2}");
-                var expected = 20253137;
+                var expected = 20195890;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

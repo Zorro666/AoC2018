@@ -106,7 +106,7 @@ namespace Day11
             {
                 var result1 = FindLargest3x3();
                 Console.WriteLine($"Day11 : Result1 {result1}");
-                var expected = (21, 53);
+                var expected = (20, 77);
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -116,7 +116,7 @@ namespace Day11
             {
                 var result2 = FindLargestSquare();
                 Console.WriteLine($"Day11 : Result2 {result2}");
-                var expected = (233, 250, 12);
+                var expected = (143, 57, 10);
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

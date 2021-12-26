@@ -127,7 +127,7 @@ namespace Day06
             {
                 var result1 = LargestFiniteArea();
                 Console.WriteLine($"Day06 : Result1 {result1}");
-                var expected = 3722;
+                var expected = 5187;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -137,7 +137,7 @@ namespace Day06
             {
                 var result2 = AreaWithin(10000);
                 Console.WriteLine($"Day06 : Result2 {result2}");
-                var expected = 44634;
+                var expected = 34829;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

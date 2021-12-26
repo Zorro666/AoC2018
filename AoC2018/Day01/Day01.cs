@@ -92,7 +92,7 @@ namespace Day01
             {
                 var result1 = FindFinalFrequency();
                 Console.WriteLine($"Day01 : Result1 {result1}");
-                var expected = 569;
+                var expected = 490;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -102,7 +102,7 @@ namespace Day01
             {
                 var result2 = FindFirstRepeatFrequency();
                 Console.WriteLine($"Day01 : Result2 {result2}");
-                var expected = 77666;
+                var expected = 70357;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

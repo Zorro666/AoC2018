@@ -117,7 +117,7 @@ namespace Day12
             {
                 var result1 = PlantSum(20);
                 Console.WriteLine($"Day12 : Result1 {result1}");
-                var expected = 4110;
+                var expected = 3494;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -127,7 +127,7 @@ namespace Day12
             {
                 var result2 = PredictPlantSum(50000000000);
                 Console.WriteLine($"Day12 : Result2 {result2}");
-                var expected = 2650000000466;
+                var expected = 2850000002454;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

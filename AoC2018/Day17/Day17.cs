@@ -191,9 +191,9 @@ namespace Day17
 {
     class Program
     {
-        const int MAX_GRID_WIDTH = 2048;
+        const int MAX_GRID_WIDTH = 1024;
         const int MAX_GRID_HEIGHT = 2048;
-        const int MAX_NUM_SPRINGS = 128;
+        const int MAX_NUM_SPRINGS = 16;
         readonly static char[,] sMapInitial = new char[MAX_GRID_WIDTH, MAX_GRID_HEIGHT];
         readonly static char[,] sMapCurrent = new char[MAX_GRID_WIDTH, MAX_GRID_HEIGHT];
         readonly static int[] sSpringsDownX = new int[MAX_NUM_SPRINGS];
@@ -222,7 +222,7 @@ namespace Day17
             {
                 var result1 = wet + settled;
                 Console.WriteLine($"Day17 : Result1 {result1}");
-                var expected = 29802;
+                var expected = 3879;
 
                 if (result1 != expected)
                 {
@@ -330,11 +330,11 @@ namespace Day17
                 {
                     throw new InvalidProgramException($"Unexpected line '{line}' xMax {xMax} out-of-range {0} -> {MAX_GRID_WIDTH}");
                 }
-                if ((yMin < 0) || (yMin > MAX_GRID_WIDTH))
+                if ((yMin < 0) || (yMin > MAX_GRID_HEIGHT))
                 {
                     throw new InvalidProgramException($"Unexpected line '{line}' yMin {yMin} out-of-range {0} -> {MAX_GRID_HEIGHT}");
                 }
-                if ((yMax < 0) || (yMax > MAX_GRID_WIDTH))
+                if ((yMax < 0) || (yMax > MAX_GRID_HEIGHT))
                 {
                     throw new InvalidProgramException($"Unexpected line '{line}' yMax {yMax} out-of-range {0} -> {MAX_GRID_HEIGHT}");
                 }
@@ -714,8 +714,8 @@ namespace Day17
 
         private static void OutputMap()
         {
-            Console.WriteLine($"'v' {sNumSpringsDown} '<' {sNumSpringsLeft} '>' {sNumSpringsRight}");
 #if false
+            Console.WriteLine($"'v' {sNumSpringsDown} '<' {sNumSpringsLeft} '>' {sNumSpringsRight}");
             for (var y = 0; y <= sMaxY; ++y)
             {
                 var line = "";
@@ -783,9 +783,9 @@ namespace Day17
             {
                 var oldWet = wet;
                 var oldSettled = settled;
+                AddSpringDown(500, 1);
                 if ((sNumSpringsDown == 0) && (sNumSpringsLeft == 0) && (sNumSpringsRight == 0))
                 {
-                    AddSpringDown(500, 1);
                 }
                 do
                 {
@@ -802,7 +802,7 @@ namespace Day17
                     same = 0;
                 }
             }
-            while (same < 128);
+            while (same < 2048);
             //OutputMap();
         }
 

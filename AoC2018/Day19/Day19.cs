@@ -117,11 +117,16 @@ namespace Day19
 
             if (part1)
             {
-                //RunProgram();
+                RunProgram();
+                var runProgramResult = GetRegister(0);
                 RunPart2(0, 0);
                 var result1 = GetRegister(0);
+                if (runProgramResult != result1)
+                {
+                    throw new InvalidProgramException($"RunProgram() != RunPart2(0,0) {runProgramResult} != {result1}");
+                }
                 Console.WriteLine($"Day19 : Result1 {result1}");
-                var expected = 1922;
+                var expected = 2640;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -437,7 +442,7 @@ namespace Day19
 
             int pc;
 
-            //  0 : addi 4 16 4
+            //  0 : addi 5 16 5
             pc = 0 + 16 + 1;
             goto label_17;
 
@@ -445,7 +450,7 @@ namespace Day19
             //Console.WriteLine($"0:{sRegisters[0]} 1:{sRegisters[1]} 2:{sRegisters[2]} 3:{sRegisters[3]} 4:{sRegisters[4]} 5:{sRegisters[5]}");
             //  1 : seti 1 8 1
             sRegisters[1] = 1;
-            sRegisters[0] = SumOfFactors(sRegisters[2]);
+            sRegisters[0] = SumOfFactors(sRegisters[1]);
             return;
 
         label_2:

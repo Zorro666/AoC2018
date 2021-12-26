@@ -206,7 +206,7 @@ namespace Day20
             {
                 var result1 = FurthestRoom();
                 Console.WriteLine($"Day20 : Result1 {result1}");
-                var expected = 4274;
+                var expected = 3014;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -216,7 +216,7 @@ namespace Day20
             {
                 var result2 = AtLeastNDoorsRooms(1000);
                 Console.WriteLine($"Day20 : Result2 {result2}");
-                var expected = 8547;
+                var expected = 8279;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

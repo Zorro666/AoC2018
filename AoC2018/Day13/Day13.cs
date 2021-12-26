@@ -234,7 +234,7 @@ namespace Day13
 {
     class Program
     {
-        const int MAX_NUM_STEPS = 1024 * 16;
+        const int MAX_NUM_STEPS = 1024 * 32;
         const int MAX_MAP_SIZE = 1024;
         const int MAX_NUM_CARTS = 64;
         readonly static char[,] sMap = new char[MAX_MAP_SIZE, MAX_MAP_SIZE];
@@ -256,7 +256,7 @@ namespace Day13
             {
                 var result1 = FirstCrash();
                 Console.WriteLine($"Day13 : Result1 {result1}");
-                var expected = (41, 22);
+                var expected = (26, 92);
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -266,7 +266,7 @@ namespace Day13
             {
                 var result2 = LastCart();
                 Console.WriteLine($"Day13 : Result2 {result2}");
-                var expected = (84, 90);
+                var expected = (86, 18);
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

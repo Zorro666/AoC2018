@@ -98,8 +98,8 @@ namespace Day07
 {
     class Program
     {
-        const int MAX_SECONDS = 1024;
-        const int MAX_NUM_NODES = 128;
+        const int MAX_SECONDS = 2048;
+        const int MAX_NUM_NODES = 256;
         readonly static bool[,] sParents = new bool[MAX_NUM_NODES, MAX_NUM_NODES];
         readonly static bool[] sActiveNodes = new bool[MAX_NUM_NODES];
         readonly static int[] sTimeUntilComplete = new int[MAX_NUM_NODES];
@@ -114,7 +114,7 @@ namespace Day07
             {
                 var result1 = ConstructionOrder();
                 Console.WriteLine($"Day07 : Result1 {result1}");
-                var expected = "BFLNGIRUSJXEHKQPVTYOCZDWMA";
+                var expected = "JNOIKSYABEQRUVWXGTZFDMHLPC";
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -124,7 +124,7 @@ namespace Day07
             {
                 var result2 = ParallelTime(60, 5);
                 Console.WriteLine($"Day07 : Result2 {result2}");
-                var expected = 880;
+                var expected = 1099;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");

@@ -94,7 +94,7 @@ namespace Day09
             {
                 var result1 = HighScore();
                 Console.WriteLine($"Day09 : Result1 {result1}");
-                var expected = 361466;
+                var expected = 413188;
                 if (result1 != expected)
                 {
                     throw new InvalidProgramException($"Part1 is broken {result1} != {expected}");
@@ -105,7 +105,7 @@ namespace Day09
                 sLastMarbleValue *= 100;
                 var result2 = HighScore();
                 Console.WriteLine($"Day09 : Result2 {result2}");
-                var expected = 2945918550;
+                var expected = 3377272893;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
