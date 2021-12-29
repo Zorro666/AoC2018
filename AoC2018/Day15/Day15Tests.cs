@@ -127,6 +127,26 @@ namespace Day15
 "#########"
                 }, 4, 4, 4, 3, TestName = "MoveTowardsTarget (4,3)")]
         [TestCase(
+    new string[] {
+"########",
+"#G....E#",
+"#G.GE..#",
+"#..#...#",
+"#E....E#",
+"########"
+                }, 6, 4, 6, 3, TestName = "MoveTowardsTarget (6,3)")]
+        [TestCase(
+    new string[] {
+"#############",
+"#....##.##.##",
+"##.GG....E..#",
+"#...G.GE....#",
+"#.....E.....#",
+"##....#.....#",
+"###GE.....E.#",
+"#############"
+                }, 10, 6, 10, 5, TestName = "MoveTowardsTarget (10,5)")]
+        [TestCase(
             new string[] {
 "#########",
 "#..G.G..#",
