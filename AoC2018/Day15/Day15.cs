@@ -439,8 +439,7 @@ namespace Day15
             {
                 var result2 = ElfWinBattleResult();
                 Console.WriteLine($"Day15 : Result2 {result2}");
-                // 42392 is too high
-                var expected = 42392;
+                var expected = 42224;
                 if (result2 != expected)
                 {
                     throw new InvalidProgramException($"Part2 is broken {result2} != {expected}");
@@ -478,7 +477,6 @@ namespace Day15
                 }
             }
             SetupFromStart();
-            sRoundCount = 0;
         }
 
         private static void SetupFromStart()
@@ -489,8 +487,12 @@ namespace Day15
                 {
                     sMap[x, y] = sMapStart[x, y];
                     sHP[x, y] = sHPStart[x, y];
+                    sProcessed[x, y] = false;
+                    sDistances[x, y] = 0;
                 }
             }
+            sRoundCount = 0;
+
         }
 
         private static void Visit(int x, int y, int endX, int endY, ref int steps)
@@ -516,13 +518,13 @@ namespace Day15
             int newSteps;
 
             newSteps = steps;
+            Visit(x + 0, y - 1, endX, endY, ref newSteps);
+
+            newSteps = steps;
             Visit(x - 1, y + 0, endX, endY, ref newSteps);
 
             newSteps = steps;
             Visit(x + 1, y + 0, endX, endY, ref newSteps);
-
-            newSteps = steps;
-            Visit(x + 0, y - 1, endX, endY, ref newSteps);
 
             newSteps = steps;
             Visit(x + 0, y + 1, endX, endY, ref newSteps);
@@ -571,53 +573,17 @@ namespace Day15
                 for (var x = 0; x < sWidth; ++x)
                 {
                     var cell = sMap[x, y];
-                    if (cell == enemy)
+                    if (cell == '.')
                     {
-                        char targetCell;
-                        int distance;
-
-                        targetCell = sMap[x + 0, y - 1];
-                        if (targetCell == '.')
+                        // Check an enemy is next to it
+                        if (sMap[x + 0, y - 1] == enemy || sMap[x - 1, y + 0] == enemy || sMap[x + 1, y + 0] == enemy || sMap[x + 0, y + 1] == enemy)
                         {
-                            distance = sDistances[x + 0, y - 1];
+                            int distance = sDistances[x, y];
                             if (distance < closestDistance)
                             {
                                 closestDistance = distance;
-                                globalClosestX = x + 0;
-                                globalClosestY = y - 1;
-                            }
-                        }
-                        targetCell = sMap[x - 1, y + 0];
-                        if (targetCell == '.')
-                        {
-                            distance = sDistances[x - 1, y + 0];
-                            if (distance < closestDistance)
-                            {
-                                closestDistance = distance;
-                                globalClosestX = x - 1;
-                                globalClosestY = y + 0;
-                            }
-                        }
-                        targetCell = sMap[x + 1, y + 0];
-                        if (targetCell == '.')
-                        {
-                            distance = sDistances[x + 1, y + 0];
-                            if (distance < closestDistance)
-                            {
-                                closestDistance = distance;
-                                globalClosestX = x + 1;
-                                globalClosestY = y + 0;
-                            }
-                        }
-                        targetCell = sMap[x + 0, y + 1];
-                        if (targetCell == '.')
-                        {
-                            distance = sDistances[x + 0, y + 1];
-                            if (distance < closestDistance)
-                            {
-                                closestDistance = distance;
-                                globalClosestX = x + 0;
-                                globalClosestY = y + 1;
+                                globalClosestX = x;
+                                globalClosestY = y;
                             }
                         }
                     }
@@ -630,6 +596,7 @@ namespace Day15
             }
             return false;
         }
+
 
         public static (int x, int y) ClosestTarget(int fromX, int fromY)
         {
@@ -797,6 +764,23 @@ namespace Day15
 
         private static bool SimulateRound()
         {
+            //var map = GetMap();
+            //Console.WriteLine($"==== {sRoundCount} =====");
+            //Console.WriteLine($"ElfAttack {sElfAttack}");
+            //foreach (var l in map)
+            //{
+            //    Console.WriteLine(l);
+            //}
+            //for (var y = 0; y < sHeight; ++y)
+            //{
+            //    for (var x = 0; x < sWidth; ++x)
+            //    {
+            //        if ((sHP[x, y] > 0) || (sMap[x, y] == 'E') || (sMap[x, y] == 'G'))
+            //        {
+            //            Console.WriteLine($"{sMap[x, y]} {x}, {y} HP={sHP[x, y]}");
+            //        }
+            //    }
+            //}
             for (var y = 0; y < sHeight; ++y)
             {
                 for (var x = 0; x < sWidth; ++x)
@@ -823,6 +807,7 @@ namespace Day15
                         {
                             return false;
                         }
+
                         // On each unit's turn, it tries to move into range of an enemy (if it isn't already)
                         var newPosition = MoveTowardsTarget(x, y);
                         var hp = sHP[x, y];
@@ -878,6 +863,7 @@ namespace Day15
 
         private static void ResolveCombat(int x, int y)
         {
+            //Console.WriteLine($"ElfAttack {sElfAttack}");
             var cell = sMap[x, y];
             var enemy = (cell == 'E') ? 'G' : 'E';
             var minHP = int.MaxValue;
@@ -950,6 +936,7 @@ namespace Day15
                     sHP[minEnemyX, minEnemyY] = 0;
                     sMap[minEnemyX, minEnemyY] = '.';
                 }
+                //Console.WriteLine($"Attach {x},{y} -> {sMap[minEnemyX, minEnemyY]} @ {minEnemyX},{minEnemyY} Power {attackPower} HP {minHP} -> {sHP[minEnemyX, minEnemyY]}");
             }
         }
 
@@ -1011,6 +998,7 @@ namespace Day15
                         {
                             throw new InvalidProgramException($"Elves did not win ElfHP:{elvesHP} GoblinHP:{goblinsHP}");
                         }
+                        //Console.WriteLine($"Round {sRoundCount} Attack {elfAttack} elfHP {elvesHP}");
                         return elfAttack;
                     }
                 }
